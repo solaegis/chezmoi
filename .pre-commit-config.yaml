@@ -29,6 +29,7 @@ repos:
     hooks:
       - id: yamllint
         args: [--format, parsable, --strict]
+        exclude: 'dot_config/iterm2/iTerm2 State.itermexport'
 
   # INI file validation
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
@@ -50,7 +51,12 @@ repos:
       - id: chezmoi-template-syntax
         name: Validate chezmoi template syntax
         entry: go
-        args: [run, -c, 'package main; import ("text/template"; "os"); func main() { _, err := template.ParseFiles(os.Args[1]); if err != nil { panic(err) } }']
+        args:
+          - run
+          - -c
+          - >-
+            package main; import ("text/template"; "os"); func main() { _, err
+            := template.ParseFiles(os.Args[1]); if err != nil { panic(err) } }
         language: system
         files: '\.tmpl$'
         pass_filenames: true
@@ -63,13 +69,17 @@ repos:
         entry: chezmoi
         args: [apply, --dry-run, --verbose]
         language: system
+        files: '\.chezmoi'
         pass_filenames: false
-        always_run: true
 
       - id: chezmoi-diff
         name: Chezmoi diff check
         entry: bash
-        args: [-c, 'chezmoi diff --exit-on-error || (echo "Chezmoi state differs from target state" && exit 1)']
+        args:
+          - -c
+          - >-
+            chezmoi diff --exit-on-error || (echo "Chezmoi state differs from
+            target state" && exit 1)
         language: system
+        files: '\.chezmoi'
         pass_filenames: false
-        always_run: true

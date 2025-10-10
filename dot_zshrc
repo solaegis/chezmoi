@@ -107,6 +107,25 @@ if [[ -f ~/.config/zsh/functions.zsh ]]; then
   source ~/.config/zsh/functions.zsh
 fi
 
+
+# ============================================================================
+# Load Performance & Maintenance Tools
+# ============================================================================
+
+# Load Zinit plugin manager (syntax highlighting, autosuggestions)
+if [[ -f ~/.config/zsh/zinit-setup.zsh ]]; then
+  source ~/.config/zsh/zinit-setup.zsh
+fi
+
+# Load completion optimizer (compile .zwc files, cleanup)
+if [[ -f ~/.config/zsh/completion-optimizer.zsh ]]; then
+  source ~/.config/zsh/completion-optimizer.zsh
+fi
+
+# Load history maintenance (auto-cleanup on exit)
+if [[ -f ~/.config/zsh/history-maintenance.zsh ]]; then
+  source ~/.config/zsh/history-maintenance.zsh
+fi
 # 2. Load basic aliases
 if [[ -f ~/.config/zsh/aliases.zsh ]]; then
   source ~/.config/zsh/aliases.zsh
@@ -157,28 +176,8 @@ fi
 # ============================================================================
 # PATH Extensions
 # ============================================================================
-
-# Google Cloud SDK (fix variable expansion)
-if [[ -f ${HOMEBREW_PREFIX}/share/google-cloud-sdk/path.zsh.inc ]]; then
-  source ${HOMEBREW_PREFIX}/share/google-cloud-sdk/path.zsh.inc
-fi
-
-if [[ -f ${HOMEBREW_PREFIX}/share/google-cloud-sdk/completion.zsh.inc ]]; then
-  source ${HOMEBREW_PREFIX}/share/google-cloud-sdk/completion.zsh.inc
-fi
-
-# Java - only add if openjdk@11 is installed
-if [[ -d ${HOMEBREW_PREFIX}/opt/openjdk@11/bin ]]; then
-  export PATH="${HOMEBREW_PREFIX}/opt/openjdk@11/bin:$PATH"
-fi
-
-# Node.js - only add if node@20 is installed
-if [[ -d ${HOMEBREW_PREFIX}/opt/node@20/bin ]]; then
-  export PATH="${HOMEBREW_PREFIX}/opt/node@20/bin:$PATH"
-fi
-
-# Ensure homebrew environment is loaded
-eval "$(${HOMEBREW_PREFIX}/bin/brew shellenv)"
+# NOTE: PATH configuration has been moved to .zshenv and .zprofile
+# for better performance and reliability.
 
 # ============================================================================
 # Git Delta Integration (Enhanced Diff Viewer)
@@ -188,6 +187,14 @@ if command -v delta &>/dev/null; then
 fi
 
 # ============================================================================
+# ============================================================================
+# Google Cloud SDK Completion
+# ============================================================================
+# Load Google Cloud SDK completion for interactive shells
+if [[ -f "${HOMEBREW_PREFIX}/share/google-cloud-sdk/completion.zsh.inc" ]]; then
+  source "${HOMEBREW_PREFIX}/share/google-cloud-sdk/completion.zsh.inc"
+fi
+
 # Load Local Customizations (Always Last)
 # ============================================================================
 # This file is for machine-specific or personal customizations

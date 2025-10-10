@@ -4,22 +4,34 @@
 # This file is ALWAYS sourced by zsh. Keep it minimal and fast.
 # Only put variables that are needed by ALL programs, including scripts.
 
-# Essential PATH - only core system paths that all programs need
+# ============================================================================
+# Homebrew Configuration
+# ============================================================================
 export HOMEBREW_PREFIX="/opt/homebrew"
-export PATH="$HOME/bin:${HOMEBREW_PREFIX}/bin:/usr/local/sbin:$PATH"
+export HOMEBREW_NO_ENV_HINTS=1  # Suppress PATH warnings
 
-# Essential environment variables needed by all programs
+# ============================================================================
+# Essential PATH - Core system paths needed by all programs
+# ============================================================================
+# Order: custom bins -> Homebrew -> Go -> system
+export PATH="$HOME/bin:${HOMEBREW_PREFIX}/bin:${HOMEBREW_PREFIX}/sbin:$HOME/go/bin:/usr/local/sbin:$PATH"
+
+# ============================================================================
+# Essential Environment Variables
+# ============================================================================
 export EDITOR="code"
 export PAGER="less"
 export BROWSER="open"
+
+# ============================================================================
+# Language-Specific Environments
+# ============================================================================
 
 # Go environment (needed by go tools even in non-interactive shells)
 export GOPATH="$HOME/go"
 export GOBIN="$GOPATH/bin"
 
 # Rust/Cargo environment (needed by cargo tools in all shells)
-# Note: Only source if file exists and avoid console output
 if [[ -f "$HOME/.cargo/env" ]]; then
   source "$HOME/.cargo/env"
 fi
-

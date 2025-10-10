@@ -54,3 +54,6 @@ alias sshls="ssh_list_keys"
 alias sshclear="ssh_clear_keys"
 alias sshreload="ssh_reload_keys"
 alias sshstop="stop_ssh_agent"
+
+# Zsh maintenance and diagnostics
+alias zsh-health="source ~/.config/zsh/health-check.zsh"
