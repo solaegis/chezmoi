@@ -1,0 +1,117 @@
+#!/bin/bash
+
+# ============================================================================
+# Configure Time Machine Backup Destination (run once after applying dotfiles)
+# ============================================================================
+# This script only runs on personal machines, not work machines
+
+{{- if and (eq .chezmoi.os "darwin") (not (or (contains "work" .chezmoi.hostname) (contains "corp" .chezmoi.hostname) (contains "company" .chezmoi.hostname) (contains "office" .chezmoi.hostname))) }}
+
+set -e
+
+echo "Setting up Time Machine backup destination for personal machine..."
+
+# Check if running as root (required for tmutil)
+if [[ $EUID -eq 0 ]]; then
+    echo "❌ This script should not be run as root"
+    echo "   Please run as a regular user and enter your password when prompted"
+    exit 1
+fi
+
+# Time Machine configuration
+TIMEMACHINE_NAME="timemachine"
+TIMEMACHINE_URL="smb://lvavasour@nas.home.solaegis.com/timemachine"
+TIMEMACHINE_ID="AC1E484C-9A0A-46F8-BCAD-23B8F5F1313E"
+
+echo "📋 Time Machine Configuration:"
+echo "  Name: $TIMEMACHINE_NAME"
+echo "  URL: $TIMEMACHINE_URL"
+echo "  ID: $TIMEMACHINE_ID"
+echo "  Machine: {{ .chezmoi.hostname }} (personal)"
+echo ""
+
+# Check if Time Machine is already configured
+if tmutil destinationinfo | grep -q "$TIMEMACHINE_ID"; then
+    echo "✅ Time Machine destination already configured"
+    echo ""
+    echo "Current Time Machine destinations:"
+    tmutil destinationinfo
+    exit 0
+fi
+
+# Check if the network destination is reachable
+echo "🔍 Checking network connectivity to Time Machine destination..."
+if ! ping -c 1 nas.home.solaegis.com >/dev/null 2>&1; then
+    echo "⚠️  Warning: Cannot reach nas.home.solaegis.com"
+    echo "   Please ensure the NAS is accessible on your network"
+    echo "   You may need to configure VPN or network access first"
+    echo ""
+    read -p "Continue with Time Machine setup anyway? (y/n): " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ Time Machine setup cancelled"
+        exit 0
+    fi
+fi
+
+# Ask for confirmation before setting up Time Machine
+echo ""
+echo "⚠️  This will configure Time Machine to use your NAS as the backup destination."
+echo "   Make sure you have:"
+echo "   - Sufficient space on the NAS"
+echo "   - Proper network access to nas.home.solaegis.com"
+echo "   - Your NAS credentials ready"
+echo ""
+read -p "Continue with Time Machine setup? (y/n): " -n 1 -r
+echo ""
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "❌ Time Machine setup cancelled by user"
+    exit 0
+fi
+
+# Set up Time Machine destination
+echo "🚀 Configuring Time Machine destination..."
+
+# Add the destination
+if sudo tmutil setdestination -a "$TIMEMACHINE_URL"; then
+    echo "✅ Time Machine destination added successfully"
+else
+    echo "❌ Failed to add Time Machine destination"
+    echo "   You may need to:"
+    echo "   1. Check your NAS credentials"
+    echo "   2. Ensure the SMB share is accessible"
+    echo "   3. Verify network connectivity"
+    exit 1
+fi
+
+# Verify the destination was added
+echo ""
+echo "📊 Verifying Time Machine configuration..."
+if tmutil destinationinfo | grep -q "$TIMEMACHINE_ID"; then
+    echo "✅ Time Machine destination verified"
+    echo ""
+    echo "Current Time Machine destinations:"
+    tmutil destinationinfo
+    echo ""
+    echo "🎉 Time Machine setup complete!"
+    echo ""
+    echo "Next steps:"
+    echo "1. Time Machine will automatically start backing up"
+    echo "2. You can monitor backup status in System Preferences > Time Machine"
+    echo "3. First backup may take several hours depending on data size"
+else
+    echo "❌ Time Machine destination verification failed"
+    echo "   Please check the configuration manually"
+    exit 1
+fi
+
+{{- else if eq .chezmoi.os "darwin" }}
+
+echo "⏭️  Skipping Time Machine setup (work machine detected: {{ .chezmoi.hostname }})"
+echo "   Time Machine backup is only configured on personal machines"
+
+{{- else }}
+
+echo "⏭️  Skipping Time Machine setup (not on macOS)"
+
+{{- end }}

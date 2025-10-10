@@ -1,0 +1,18 @@
+# ============================================================================
+# Local Zsh Customizations
+# ============================================================================
+# Add your personal customizations here
+# This file is sourced last and won't be overwritten by updates
+
+# Example: Custom aliases
+# alias myalias='command'
+
+# Example: Custom functions
+# myfunction() {
+#     echo "Hello from custom function"
+# }
+
+# Example: Environment variables
+# export MY_CUSTOM_VAR="value"
+
+echo "🏠 Local customizations loaded"

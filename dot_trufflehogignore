@@ -1,0 +1,70 @@
+# TruffleHog ignore patterns
+# Files and directories to exclude from secret scanning
+
+# Git and version control
+.git/
+.gitignore
+
+# YADM encrypted archive (already encrypted)
+.local/share/yadm/archive
+
+# Backup directories
+backups/
+logs/
+.cache/
+
+# Build and dependency directories
+node_modules/
+.venv/
+venv/
+__pycache__/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Known safe configuration files (adjust as needed)
+.pre-commit-config.yaml
+Taskfile*.yaml
+*.md
+
+# Package manager files
+package-lock.json
+yarn.lock
+Pipfile.lock
+
+# Compiled binaries and executables
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Log files
+*.log
+
+# Certificate files that are public
+*.crt
+*.cer
+
+# Test fixtures and mock data (be careful with this)
+test/fixtures/
+tests/fixtures/
+mock/
+
+# Documentation
+docs/
+*.md
+*.rst
+*.txt

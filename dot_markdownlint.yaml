@@ -1,0 +1,22 @@
+# Markdownlint configuration
+# See https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+
+# Disable line length rule or make it more lenient
+MD013:
+  # Line length
+  line_length: 120  # Increase from default 80 to 120
+  # Allow long lines in tables and code blocks
+  tables: false
+  code_blocks: false
+  # Allow long lines for headings
+  headings: false
+
+# Require language for fenced code blocks
+MD040:
+  # Fenced code blocks should have a language specified
+  allowed_languages: ['bash', 'shell', 'sh', 'yaml', 'json', 'python', 'javascript', 'typescript', 'html', 'css', 'markdown', 'text', 'console']
+  language_only: false
+
+# Other common rules to adjust
+MD033: false  # Allow inline HTML
+MD041: false  # First line in file should be a top level heading (disable for READMEs with badges)

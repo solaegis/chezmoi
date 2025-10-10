@@ -1,0 +1,52 @@
+# Machine-specific configuration template
+# This file will be populated during installation based on user input
+# and machine detection
+
+{{- $machineType := "" -}}
+{{- $email := "" -}}
+{{- $githubUser := "" -}}
+{{- $fullName := "" -}}
+
+{{- /* Detect machine type based on hostname patterns */ -}}
+{{- if or (contains "work" .chezmoi.hostname) (contains "corp" .chezmoi.hostname) -}}
+{{-   $machineType = "work" -}}
+{{- else -}}
+{{-   $machineType = "personal" -}}
+{{- end -}}
+
+{{- /* In interactive mode, prompt for values */ -}}
+{{- if stdinIsATTY -}}
+{{-   $machineType = promptString "Machine type (work/personal)" $machineType -}}
+{{-   $email = promptString "Email address" -}}
+{{-   $githubUser = promptString "GitHub username" "solaegis" -}}
+{{-   $fullName = promptString "Full name" -}}
+{{- end -}}
+
+# Store the configuration
+machine_type: {{ $machineType | quote }}
+email: {{ $email | quote }}
+github_user: {{ $githubUser | quote }}
+full_name: {{ $fullName | quote }}
+
+# Machine detection
+hostname: {{ .chezmoi.hostname | quote }}
+os: {{ .chezmoi.os | quote }}
+arch: {{ .chezmoi.arch | quote }}
+
+# Work-specific settings
+{{- if eq $machineType "work" }}
+is_work: true
+is_personal: false
+git_work_enabled: true
+vpn_required: true
+{{- else }}
+is_work: false
+is_personal: true
+git_work_enabled: false
+vpn_required: false
+{{- end }}
+
+# Package installation preferences
+install_dev_tools: true
+install_cloud_tools: {{ eq $machineType "work" }}
+install_gaming_tools: {{ eq $machineType "personal" }}

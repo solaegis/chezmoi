@@ -1,0 +1,10 @@
+[v1]
+"cargo-audit 0.21.2 (registry+https://github.com/rust-lang/crates.io-index)" = ["cargo-audit"]
+"cargo-edit 0.13.7 (registry+https://github.com/rust-lang/crates.io-index)" = [
+    "cargo-add",
+    "cargo-rm",
+    "cargo-set-version",
+    "cargo-upgrade",
+]
+"cargo-outdated 0.17.0 (registry+https://github.com/rust-lang/crates.io-index)" = ["cargo-outdated"]
+"dotward 0.1.0 (path+file:///Users/lvavasour/git/dotward-boltai)" = ["dotward"]

@@ -1,0 +1,201 @@
+# ============================================================================
+# .zshrc - Optimized Zsh Configuration
+# ============================================================================
+# Managed by chezmoi - https://github.com/solaegis/chezmoi
+# Last optimized: 2025-10-10
+# ============================================================================
+
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+
+# ============================================================================
+# Performance: Lazy Loading Helper
+# ============================================================================
+# Defer non-critical initializations for faster startup
+function zsh_defer_init() {
+  eval "$@"
+}
+
+# ============================================================================
+# Completion System Configuration
+# ============================================================================
+# Move completion dump files to ~/.cache/zsh to avoid cluttering home directory
+export ZSH_COMPDUMP="$HOME/.cache/zsh/.zcompdump"
+
+if type brew &>/dev/null; then
+  FPATH="$(brew --prefix)/share/zsh-completions:$FPATH"
+  
+  # Create cache directory if it doesn't exist
+  [[ -d "${ZSH_COMPDUMP:h}" ]] || mkdir -p "${ZSH_COMPDUMP:h}"
+  
+  # Load completions intelligently
+  autoload -Uz compinit
+  
+  # Only regenerate compdump once per day for performance
+  if [[ -n ${ZSH_COMPDUMP}(#qN.mh+24) ]]; then
+    compinit -d "$ZSH_COMPDUMP"
+  else
+    compinit -C -d "$ZSH_COMPDUMP"
+  fi
+  
+  # Load bash completions for compatibility
+  autoload -U +X bashcompinit && bashcompinit
+fi
+
+# ============================================================================
+# Zsh Options
+# ============================================================================
+# Directory navigation
+setopt auto_cd                   # cd by typing directory name if it's not a command
+setopt auto_pushd               # Make cd push the old directory onto the stack
+setopt pushd_ignore_dups        # Don't push duplicate directories
+setopt pushd_minus              # Use - instead of + for pushd
+
+# History configuration
+setopt extended_history         # Record timestamp of command in HISTFILE
+setopt hist_expire_dups_first   # Expire duplicate entries first when trimming history
+setopt hist_ignore_dups         # Don't record an entry that was just recorded again
+setopt hist_ignore_all_dups     # Delete old recorded entry if new entry is a duplicate
+setopt hist_find_no_dups        # Don't display a line previously found
+setopt hist_ignore_space        # Don't record an entry starting with a space
+setopt hist_save_no_dups        # Don't write duplicate entries in the history file
+setopt hist_verify              # Don't execute immediately upon history expansion
+setopt share_history            # Share history between all sessions
+
+# Other options
+setopt interactive_comments     # Allow comments in interactive shells
+setopt rmstarsilent            # Don't ask for confirmation on rm *
+setopt long_list_jobs          # List jobs in long format by default
+setopt notify                  # Report status of background jobs immediately
+
+# History
+HISTSIZE=50000
+SAVEHIST=50000
+HISTFILE=~/.zsh_history
+
+# ============================================================================
+# Environment Variables (Interactive Shell Only)
+# ============================================================================
+export GPG_TTY=$(tty)
+export CLICOLOR=1
+export LSCOLORS=ExFxBxDxCxegedabagacad
+
+# FZF configuration
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_DEFAULT_OPTS='
+  --height 40%
+  --layout=reverse
+  --border
+  --inline-info
+  --color=fg:#f8f8f2,bg:#282a36,hl:#bd93f9
+  --color=fg+:#f8f8f2,bg+:#44475a,hl+:#bd93f9
+  --color=info:#ffb86c,prompt:#50fa7b,pointer:#ff79c6
+  --color=marker:#ff79c6,spinner:#ffb86c,header:#6272a4
+'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+
+# ============================================================================
+# Load Custom Configuration Files (Order Matters)
+# ============================================================================
+
+# 1. Load functions FIRST (required by aliases)
+if [[ -f ~/.config/zsh/functions.zsh ]]; then
+  source ~/.config/zsh/functions.zsh
+fi
+
+# 2. Load basic aliases
+if [[ -f ~/.config/zsh/aliases.zsh ]]; then
+  source ~/.config/zsh/aliases.zsh
+fi
+
+# 3. Load modern tool aliases (eza, bat, ripgrep, etc.)
+if [[ -f ~/.config/zsh/modern-aliases.zsh ]]; then
+  source ~/.config/zsh/modern-aliases.zsh
+fi
+
+# 4. Load chezmoi aliases if they exist
+if [[ -f ~/.config/shell/chezmoi-aliases.sh ]]; then
+  source ~/.config/shell/chezmoi-aliases.sh
+fi
+
+# ============================================================================
+# Powerlevel10k Theme
+# ============================================================================
+if [[ -f ${HOMEBREW_PREFIX}/share/powerlevel10k/powerlevel10k.zsh-theme ]]; then
+  source ${HOMEBREW_PREFIX}/share/powerlevel10k/powerlevel10k.zsh-theme
+fi
+
+# To customize prompt, run 'p10k configure' or edit ~/.p10k.zsh
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# ============================================================================
+# Tool Initialization (Lazy Loading for Performance)
+# ============================================================================
+
+# direnv - load environment from .envrc files
+if command -v direnv &>/dev/null; then
+  eval "$(direnv hook zsh)"
+fi
+
+# zoxide - smarter cd command
+if command -v zoxide &>/dev/null; then
+  eval "$(zoxide init zsh)"
+fi
+
+# fzf - fuzzy finder key bindings and completion
+if [[ -f ~/.fzf.zsh ]]; then
+  source ~/.fzf.zsh
+elif [[ -f ${HOMEBREW_PREFIX}/opt/fzf/shell/completion.zsh ]]; then
+  source ${HOMEBREW_PREFIX}/opt/fzf/shell/key-bindings.zsh
+  source ${HOMEBREW_PREFIX}/opt/fzf/shell/completion.zsh
+fi
+
+# ============================================================================
+# PATH Extensions
+# ============================================================================
+
+# Google Cloud SDK (fix variable expansion)
+if [[ -f ${HOMEBREW_PREFIX}/share/google-cloud-sdk/path.zsh.inc ]]; then
+  source ${HOMEBREW_PREFIX}/share/google-cloud-sdk/path.zsh.inc
+fi
+
+if [[ -f ${HOMEBREW_PREFIX}/share/google-cloud-sdk/completion.zsh.inc ]]; then
+  source ${HOMEBREW_PREFIX}/share/google-cloud-sdk/completion.zsh.inc
+fi
+
+# Java - only add if openjdk@11 is installed
+if [[ -d ${HOMEBREW_PREFIX}/opt/openjdk@11/bin ]]; then
+  export PATH="${HOMEBREW_PREFIX}/opt/openjdk@11/bin:$PATH"
+fi
+
+# Node.js - only add if node@20 is installed
+if [[ -d ${HOMEBREW_PREFIX}/opt/node@20/bin ]]; then
+  export PATH="${HOMEBREW_PREFIX}/opt/node@20/bin:$PATH"
+fi
+
+# Ensure homebrew environment is loaded
+eval "$(${HOMEBREW_PREFIX}/bin/brew shellenv)"
+
+# ============================================================================
+# Git Delta Integration (Enhanced Diff Viewer)
+# ============================================================================
+if command -v delta &>/dev/null; then
+  export GIT_PAGER='delta'
+fi
+
+# ============================================================================
+# Load Local Customizations (Always Last)
+# ============================================================================
+# This file is for machine-specific or personal customizations
+# It won't be overwritten by chezmoi updates
+if [[ -f ~/.zshrc.local ]]; then
+  source ~/.zshrc.local
+fi
+
+# ============================================================================
+# End of .zshrc
+# ============================================================================

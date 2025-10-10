@@ -1,0 +1,12 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhistcnt =0
+let g:netrw_dirhist_0='/Users/lvavasour/git-work/snowflake-accounts-manager/.git'
+let g:netrw_dirhist_9='/Users/lvavasour/git-work/acoe-adm-terraform/project/boilr/template'
+let g:netrw_dirhist_8='/Users/lvavasour/.local/share/yadm/repo.git'
+let g:netrw_dirhist_7='/Users/lvavasour/git-work/acoe-python-firebase-chat'
+let g:netrw_dirhist_6='/Users/lvavasour/git/dadandlad.co/precommit-template'
+let g:netrw_dirhist_5='/Users/lvavasour/.cache/pre-commit'
+let g:netrw_dirhist_4='/Users/lvavasour/git-work'
+let g:netrw_dirhist_3='/Users/lvavasour/git-work/acoe-google-cloudbuild-template/terraform/adm_terraform_prod_0d34'
+let g:netrw_dirhist_2='/Users/lvavasour/git-work/acoe-google-cloudbuild-template/terraform'
+let g:netrw_dirhist_1='/Users/lvavasour/git-work/acoe-google-cloudbuild-template/terraform/adm_terraform_prod_0d34'

@@ -1,0 +1,63 @@
+# ============================================================================
+# Homebrew Brewfile - Package Management
+# ============================================================================
+# This file defines all packages to be installed via Homebrew
+# Generated for {{ .chezmoi.hostname }} machine
+# ============================================================================
+
+# Essential CLI tools (always installed)
+brew "git"
+brew "curl"
+brew "wget"
+brew "vim"
+brew "direnv"
+brew "jq"
+brew "ripgrep"
+brew "fd"
+brew "bat"
+brew "eza"
+brew "htop"
+brew "tree"
+brew "uv"  # Modern Python package installer
+
+# Development tools
+{{- if (index . "install_dev_tools") }}
+brew "go"
+brew "python3"
+brew "node"
+brew "rust"
+{{- end }}
+
+# Work-specific packages (detected by hostname)
+{{- if or (contains "work" .chezmoi.hostname) (contains "corp" .chezmoi.hostname) (contains "company" .chezmoi.hostname) (contains "office" .chezmoi.hostname) }}
+brew "terraform"
+brew "terraform-docs"
+brew "google-cloud-sdk"
+brew "awscli"
+brew "kubectl"
+brew "helm"
+# Work-specific development tools
+brew "docker"
+brew "docker-compose"
+brew "k9s"
+brew "stern"
+{{- else }}
+# Personal-specific packages
+brew "yt-dlp"
+# Personal development tools
+brew "gh"
+brew "glow"
+brew "fzf"
+brew "zoxide"
+{{- end }}
+
+# Optional packages (can be enabled via configuration)
+{{- if (index . "install_media_tools") }}
+brew "ffmpeg"
+brew "imagemagick"
+{{- end }}
+
+{{- if (index . "install_gaming_tools") }}
+brew "steam"
+brew "discord"
+{{- end }}

@@ -1,0 +1,413 @@
+# ============================================================================
+# High-Performance Zsh Configuration - 2025 Best Practices
+# ============================================================================
+
+# ============================================================================
+# 1. STARTUP PERFORMANCE OPTIMIZATION
+# ============================================================================
+
+# Enable Powerlevel10k instant prompt (MUST be at top)
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+
+# Skip global compinit for faster startup
+skip_global_compinit=1
+
+# Lazy loading function for expensive operations
+lazy_load() {
+  local load_cmd="$1"
+  local trigger_cmds=("${@:2}")
+  
+  for trigger_cmd in $trigger_cmds; do
+    eval "${trigger_cmd}() {
+      unfunction ${trigger_cmd}
+      ${load_cmd}
+      ${trigger_cmd} \$@
+    }"
+  done
+}
+
+# ============================================================================
+# 2. ADVANCED COMPLETION SYSTEM
+# ============================================================================
+
+# Optimized completion configuration
+export ZSH_COMPDUMP="$HOME/.cache/zsh/.zcompdump"
+
+if type brew &>/dev/null; then
+  export FPATH="$(brew --prefix)/share/zsh-completions:$FPATH"
+fi
+
+# Ensure cache directory exists
+[[ -d "${ZSH_COMPDUMP:h}" ]] || mkdir -p "${ZSH_COMPDUMP:h}"
+
+# Smart completion initialization
+autoload -Uz compinit
+
+# Only check and rebuild compdump once per day
+if [[ $ZSH_COMPDUMP(#qNmh+24) ]]; then
+  compinit -d "$ZSH_COMPDUMP"
+  # Async compilation for faster subsequent loads
+  {
+    if [[ -s "$ZSH_COMPDUMP" && (! -s "${ZSH_COMPDUMP}.zwc" || "$ZSH_COMPDUMP" -nt "${ZSH_COMPDUMP}.zwc") ]]; then
+      zcompile "$ZSH_COMPDUMP"
+    fi
+  } &!
+else
+  compinit -C -d "$ZSH_COMPDUMP"
+fi
+
+# Advanced completion styling
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' rehash true
+zstyle ':completion:*' accept-exact '*(N)'
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path ~/.cache/zsh/completion
+
+# Group matches and describe
+zstyle ':completion:*:*:*:*:descriptions' format '%F{green}-- %d --%f'
+zstyle ':completion:*:*:*:*:corrections' format '%F{yellow}!- %d (errors: %e) -!%f'
+zstyle ':completion:*:messages' format ' %F{purple} -- %d --%f'
+zstyle ':completion:*:warnings' format ' %F{red}-- no matches found --%f'
+
+# Process completion optimization
+zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;34=0=01'
+zstyle ':completion:*:*:*:*:processes' command "ps -u $USERNAME -o pid,user,comm -w -w"
+
+# SSH/SCP/RSYNC completion
+zstyle ':completion:*:(scp|rsync):*' tag-order 'hosts:-host:host hosts:-domain:domain hosts:-ipaddr:ip\ address *'
+zstyle ':completion:*:(scp|rsync):*' group-order users files all-files hosts-domain hosts-host hosts-ipaddr
+zstyle ':completion:*:ssh:*' tag-order 'hosts:-host:host hosts:-domain:domain hosts:-ipaddr:ip\ address *'
+zstyle ':completion:*:ssh:*' group-order users hosts-domain hosts-host users hosts-ipaddr
+
+# ============================================================================
+# 3. OPTIMIZED ZSH OPTIONS
+# ============================================================================
+
+# Performance options
+setopt no_beep                    # No beeping
+setopt multios                    # Enable multios
+setopt no_flow_control           # Disable flow control
+setopt interactive_comments      # Allow comments in interactive shells
+
+# Directory navigation
+setopt auto_cd                   # Auto cd to directories
+setopt auto_pushd               # Automatically push directories to stack
+setopt pushd_ignore_dups        # Don't push duplicate directories
+setopt pushd_silent             # Don't print directory stack
+
+# History optimization
+setopt share_history            # Share history between sessions
+setopt hist_expire_dups_first   # Expire duplicates first
+setopt hist_ignore_dups         # Don't record duplicates
+setopt hist_ignore_all_dups     # Remove old duplicates
+setopt hist_find_no_dups        # Don't display duplicates in search
+setopt hist_ignore_space        # Don't record commands starting with space
+setopt hist_save_no_dups        # Don't save duplicates
+setopt hist_verify              # Show command before executing from history
+setopt inc_append_history       # Append to history immediately
+setopt hist_reduce_blanks       # Remove extra blanks
+
+# Expansion and globbing
+setopt extended_glob            # Enable extended globbing
+setopt glob_dots               # Include dotfiles in globbing
+setopt numeric_glob_sort       # Sort numerically
+
+# Job control
+setopt long_list_jobs          # List jobs in long format
+setopt notify                  # Report job status immediately
+
+# ============================================================================
+# 4. ENHANCED HISTORY CONFIGURATION
+# ============================================================================
+
+HISTSIZE=100000
+SAVEHIST=100000
+HISTFILE="$HOME/.cache/zsh/.zsh_history"
+
+# Ensure history directory exists
+[[ -d "${HISTFILE:h}" ]] || mkdir -p "${HISTFILE:h}"
+
+# History search optimization
+autoload -U up-line-or-beginning-search
+autoload -U down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+
+# ============================================================================
+# 5. SMART PATH MANAGEMENT
+# ============================================================================
+
+# Function to safely add to PATH
+path_prepend() {
+  local dir="$1"
+  [[ -d "$dir" ]] && [[ ":$PATH:" != *":$dir:"* ]] && PATH="$dir:$PATH"
+}
+
+path_append() {
+  local dir="$1"
+  [[ -d "$dir" ]] && [[ ":$PATH:" != *":$dir:"* ]] && PATH="$PATH:$dir"
+}
+
+# Core system paths
+path_prepend "/usr/local/bin"
+path_prepend "/usr/local/sbin"
+
+# Development tools (ordered by priority)
+path_prepend "$HOME/.local/bin"
+path_prepend "$HOME/bin"
+path_prepend "$GOBIN"
+path_prepend "$HOME/.cargo/bin"
+path_prepend "/usr/local/opt/node@20/bin"
+path_prepend "/opt/homebrew/opt/openjdk@11/bin"
+
+# Clean up duplicates and export
+typeset -U PATH
+export PATH
+
+# ============================================================================
+# 6. PLUGIN MANAGEMENT WITH ZINIT
+# ============================================================================
+
+# Install zinit if not present (first-time setup)
+ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+if [[ ! -d "$ZINIT_HOME" ]]; then
+  mkdir -p "$(dirname $ZINIT_HOME)"
+  git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+fi
+
+# Load zinit
+source "${ZINIT_HOME}/zinit.zsh"
+
+# Load plugins with turbo mode (after prompt) for better startup performance
+zinit ice wait lucid atload'_zsh_autosuggest_start'
+zinit light zsh-users/zsh-autosuggestions
+
+zinit ice wait lucid
+zinit light zsh-users/zsh-syntax-highlighting
+
+zinit ice wait lucid
+zinit light zsh-users/zsh-completions
+
+# History substring search
+zinit ice wait lucid
+zinit light zsh-users/zsh-history-substring-search
+
+# ============================================================================
+# 7. LAZY LOADING FOR PERFORMANCE
+# ============================================================================
+
+# Lazy load heavy tools
+lazy_load 'eval "$(direnv hook zsh)"' direnv
+lazy_load 'eval "$(zoxide init zsh)"' z zi
+lazy_load 'eval "$(uv generate-shell-completion zsh)"' uv
+
+# Atuin - magical shell history (lazy load)
+if command -v atuin &> /dev/null; then
+  lazy_load 'eval "$(atuin init zsh)"' atuin
+fi
+
+# McFly - neural network history search (lazy load) 
+if command -v mcfly &> /dev/null; then
+  lazy_load 'eval "$(mcfly init zsh)"' mcfly
+fi
+
+# ============================================================================
+# 8. FZF CONFIGURATION
+# ============================================================================
+
+# FZF default configuration for optimal performance
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+export FZF_DEFAULT_OPTS='
+  --height 40%
+  --layout=reverse
+  --border
+  --inline-info
+  --preview "bat --style=numbers --color=always {} 2>/dev/null || cat {} 2>/dev/null || tree -C {}"
+  --preview-window=right:60%:wrap
+  --bind "ctrl-/:toggle-preview"
+  --bind "ctrl-y:execute-silent(echo {} | pbcopy)"
+  --color=dark
+  --color=fg:-1,bg:-1,hl:#5fff87,fg+:-1,bg+:-1,hl+:#ffaf5f
+  --color=info:#af87ff,prompt:#5fff87,pointer:#ff87d7,marker:#ff87d7,spinner:#ff87d7
+'
+
+# Load FZF keybindings and completion
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+[ -f /usr/local/opt/fzf/shell/key-bindings.zsh ] && source /usr/local/opt/fzf/shell/key-bindings.zsh
+[ -f /usr/local/opt/fzf/shell/completion.zsh ] && source /usr/local/opt/fzf/shell/completion.zsh
+
+# ============================================================================
+# 9. DIRENV AND PROJECT ENVIRONMENT MANAGEMENT
+# ============================================================================
+
+# Enhanced direnv integration with logging
+if command -v direnv &> /dev/null; then
+  eval "$(direnv hook zsh)"
+  
+  # Custom direnv hook with feedback
+  _direnv_hook() {
+    trap -- '' SIGINT;
+    eval "$(direnv export zsh 2>/dev/null)";
+    trap - SIGINT;
+  }
+fi
+
+# Project-specific environment loader
+load_project_env() {
+  local env_files=(.env .env.local .envrc)
+  
+  for env_file in $env_files; do
+    if [[ -f "$env_file" && -r "$env_file" ]]; then
+      # Only show message if not using direnv
+      if ! command -v direnv &> /dev/null; then
+        echo "📁 Loading environment from $env_file"
+      fi
+      set -a
+      source "$env_file"
+      set +a
+    fi
+  done
+}
+
+# Auto-load project env when entering directories
+autoload -U add-zsh-hook
+add-zsh-hook chpwd load_project_env
+
+# ============================================================================
+# 10. ENVIRONMENT VARIABLES
+# ============================================================================
+
+# Core environment
+export EDITOR="cursor"
+export VISUAL="cursor"
+export PAGER="less"
+export BROWSER="open"
+
+# Development environment
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+export GPG_TTY=$(tty)
+export CLICOLOR=1
+export LSCOLORS=ExFxBxDxCxegedabagacad
+
+# XDG Base Directory Specification
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_STATE_HOME="$HOME/.local/state"
+
+# Tool configurations
+export GOPATH="$HOME/go"
+export GOBIN="$GOPATH/bin"
+export CARGO_HOME="$HOME/.cargo"
+export RUSTUP_HOME="$HOME/.rustup"
+export AWS_DEFAULT_PROFILE=leburg_acxiom
+export DIRENV_LOG_FORMAT=""
+
+# ============================================================================
+# 11. COMMAND EXECUTION TIMING
+# ============================================================================
+
+# Monitor command execution time
+preexec() {
+  timer=${timer:-$SECONDS}
+}
+
+precmd() {
+  if [ $timer ]; then
+    local elapsed=$(($SECONDS - $timer))
+    if [ $elapsed -gt 5 ]; then
+      echo "⏱️  Command took ${elapsed}s"
+    fi
+    unset timer
+  fi
+}
+
+# ============================================================================
+# 12. KEY BINDINGS
+# ============================================================================
+
+# Emacs-style key bindings
+bindkey -e
+
+# History search
+bindkey '^R' history-incremental-search-backward
+bindkey '^S' history-incremental-search-forward
+bindkey '^P' up-line-or-beginning-search
+bindkey '^N' down-line-or-beginning-search
+
+# Line editing
+bindkey '^A' beginning-of-line
+bindkey '^E' end-of-line
+bindkey '^K' kill-line
+bindkey '^U' kill-whole-line
+bindkey '^W' backward-kill-word
+bindkey '^Y' yank
+
+# Word movement
+bindkey '^[b' backward-word
+bindkey '^[f' forward-word
+bindkey '^[d' kill-word
+bindkey '^[^?' backward-kill-word
+
+# ============================================================================
+# 13. THEME AND PROMPT
+# ============================================================================
+
+# Load Powerlevel10k
+source /usr/local/share/powerlevel10k/powerlevel10k.zsh-theme
+
+# Load p10k configuration
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# ============================================================================
+# 14. ENHANCED FUNCTIONS AND ALIASES
+# ============================================================================
+
+# Load enhanced functions
+[[ -f ~/.config/zsh/enhanced-functions.zsh ]] && source ~/.config/zsh/enhanced-functions.zsh
+
+# Load modern aliases
+[[ -f ~/.config/zsh/modern-aliases.zsh ]] && source ~/.config/zsh/modern-aliases.zsh
+
+# Load Google Cloud SDK if available
+[[ -f '/usr/local/share/google-cloud-sdk/path.zsh.inc' ]] && 
+  source '/usr/local/share/google-cloud-sdk/path.zsh.inc'
+
+[[ -f '/usr/local/share/google-cloud-sdk/completion.zsh.inc' ]] && 
+  source '/usr/local/share/google-cloud-sdk/completion.zsh.inc'
+
+# Load custom chezmoi aliases
+[[ -f ~/.config/shell/chezmoi-aliases.sh ]] && source ~/.config/shell/chezmoi-aliases.sh
+
+# Load existing custom functions if they exist
+[[ -f ~/.config/zsh/functions.zsh ]] && source ~/.config/zsh/functions.zsh
+
+# Load local customizations (always last)
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
+# Claude alias
+alias claude="/Users/lvavasour/.claude/local/claude"
+
+# ============================================================================
+# 15. STARTUP DIAGNOSTICS (OPTIONAL)
+# ============================================================================
+
+# Uncomment for startup time profiling
+# zmodload zsh/zprof
+
+# Display startup time (uncomment for debugging)
+# echo "Zsh loaded in ${(M)$(( SECONDS * 1000 ))#*.?} ms"
+
+# Uncomment at end of file for profiling results
+# zprof
+
+echo "🚀 Enhanced Zsh configuration loaded successfully!"

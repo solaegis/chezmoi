@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# ============================================================================
+# Install Homebrew (run once before applying dotfiles)
+# ============================================================================
+
+{{- if eq .chezmoi.os "darwin" }}
+
+set -e
+
+echo "Checking for Homebrew..."
+
+if ! command -v brew &> /dev/null; then
+    echo "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    # Add Homebrew to PATH for Apple Silicon Macs
+    if [[ -f "/opt/homebrew/bin/brew" ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    fi
+
+    echo "✓ Homebrew installed successfully"
+else
+    echo "✓ Homebrew already installed"
+    brew update
+fi
+
+{{- end }}

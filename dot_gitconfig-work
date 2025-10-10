@@ -1,0 +1,7 @@
+[user]
+	name = Lewis Vavasour
+	email = lewis.vavasour@acxiom.com
+[credential]
+	helper = osxkeychain
+[core]
+	sshCommand = "ssh -i ~/.ssh/id_rsa_work"

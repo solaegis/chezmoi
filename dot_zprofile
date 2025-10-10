@@ -1,0 +1,51 @@
+# ============================================================================
+# .zprofile - Login shell setup (runs after .zshenv, before .zshrc)
+# ============================================================================
+# This file runs for login shells only. Put PATH additions and environment
+# variables that are needed for the session but not for every script.
+
+# ============================================================================
+# PATH Management - Development Tools
+# ============================================================================
+# Add development tools to PATH (order matters - last added = highest priority)
+
+# Array of directories to add to PATH (if they exist)
+path_additions=(
+  "/usr/local/opt/findutils/libexec/gnubin"  # GNU find utilities
+  "$HOME/Library/Application Support/reflex/bun/bin"  # Bun
+  "$HOME/.codeium/windsurf/bin"  # Windsurf
+)
+
+# Add each directory to PATH if it exists
+for dir in $path_additions; do
+  [[ -d "$dir" ]] && export PATH="$dir:$PATH"
+done
+
+# ============================================================================
+# Session Environment Variables
+# ============================================================================
+
+# AWS Configuration
+export AWS_DEFAULT_PROFILE=leburg_acxiom
+
+# Development Environment
+export DIRENV_LOG_FORMAT=
+
+# ============================================================================
+# Development Tool Paths (Java, Node, etc.)
+# ============================================================================
+
+# Java - only add if openjdk@11 is installed
+if [[ -d "${HOMEBREW_PREFIX}/opt/openjdk@11/bin" ]]; then
+  export PATH="${HOMEBREW_PREFIX}/opt/openjdk@11/bin:$PATH"
+fi
+
+# Node.js - only add if node@20 is installed
+if [[ -d "${HOMEBREW_PREFIX}/opt/node@20/bin" ]]; then
+  export PATH="${HOMEBREW_PREFIX}/opt/node@20/bin:$PATH"
+fi
+
+# Google Cloud SDK
+if [[ -f "${HOMEBREW_PREFIX}/share/google-cloud-sdk/path.zsh.inc" ]]; then
+  source "${HOMEBREW_PREFIX}/share/google-cloud-sdk/path.zsh.inc"
+fi

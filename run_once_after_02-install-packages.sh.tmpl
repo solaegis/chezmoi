@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# ============================================================================
+# Install packages via Homebrew using Brewfile (run once after applying dotfiles)
+# ============================================================================
+
+{{- if eq .chezmoi.os "darwin" }}
+
+set -e
+
+echo "Installing packages via Homebrew using Brewfile..."
+
+# Check if Homebrew is installed
+if ! command -v brew &> /dev/null; then
+    echo "❌ Homebrew not found. Please install Homebrew first."
+    echo "   Run: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+    exit 1
+fi
+
+# Check if Brewfile exists
+BREWFILE="$HOME/.Brewfile"
+if [ ! -f "$BREWFILE" ]; then
+    echo "❌ Brewfile not found at $BREWFILE"
+    echo "   Make sure chezmoi has been applied to generate the Brewfile"
+    exit 1
+fi
+
+echo "📦 Found Brewfile for {{ .chezmoi.hostname }} machine"
+echo ""
+
+# Show what will be installed
+echo "📋 Packages to be installed:"
+echo "============================================================================"
+grep "^brew " "$BREWFILE" | sed 's/^brew "//;s/"$//' | sort
+echo "============================================================================"
+echo ""
+
+# Ask for confirmation if running interactively
+if [ -t 0 ]; then
+    read -p "Install these packages? (y/n): " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ Package installation cancelled by user"
+        exit 0
+    fi
+fi
+
+# Install packages using brew bundle
+echo "🚀 Installing packages..."
+if brew bundle --file="$BREWFILE" --verbose; then
+    echo ""
+    echo "✅ All packages installed successfully!"
+    
+    # Show summary
+    echo ""
+    echo "📊 Installation Summary:"
+    echo "  Hostname: {{ .chezmoi.hostname }}"
+    echo "  Total Packages: $(grep -c "^brew " "$BREWFILE")"
+    echo "  Brewfile: $BREWFILE"
+    echo ""
+    
+    # Show any failed installations
+    if brew bundle --file="$BREWFILE" --dry-run 2>&1 | grep -q "would install"; then
+        echo "⚠️  Some packages may have failed to install. Check output above."
+    fi
+    
+else
+    echo ""
+    echo "❌ Some packages failed to install. Check the output above for details."
+    echo ""
+    echo "💡 You can retry installation with:"
+    echo "   brew bundle --file=\"$BREWFILE\""
+    echo ""
+    echo "💡 Or install individual packages:"
+    echo "   brew install <package-name>"
+    exit 1
+fi
+
+{{- end }}

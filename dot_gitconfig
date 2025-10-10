@@ -1,0 +1,125 @@
+[user]
+        name = Lewis Vavasour
+        email = lewis.vavasour@gmail.com
+[alias]
+  # Quick commit shortcuts
+  ac = !git add -A && git commit -m
+  cam = commit -am
+
+  # Branch management
+  br = branch -vv
+  co = checkout
+  cob = checkout -b
+  cm = !git pull && git branch --merged | grep -Ev '(^\\*|main|master|develop|prod)' | xargs -n 1 git branch -d
+
+  # Merge and rebase
+  ff = merge --no-ff
+  rb = rebase
+  rbi = rebase -i
+
+  # Logging and history
+  lg = log --graph --abbrev-commit --decorate --oneline --all
+  lp = log --pretty=oneline
+  ll = log --oneline --graph --decorate --all -20
+  search = log -S
+
+  # Push/pull shortcuts
+  po = push origin
+  poh = push origin HEAD
+  pf = push --force-with-lease
+
+  # Status and diff
+  st = status -sb
+  d = diff
+  dc = diff --cached
+
+  # Undo operations
+  uc = reset --soft HEAD^
+  startover = !git reset --hard origin/$(git branch --show-current)
+
+  # Stash shortcuts
+  sl = stash list
+  sp = stash pop
+  ss = stash save
+
+  # Advanced aliases
+  find = !git log --pretty="format:%Cgreen%H %Cblue%s" --name-status --grep
+  last = log -1 HEAD --stat
+  amend = commit --amend --no-edit
+  recent = for-each-ref --sort=-committerdate refs/heads/
+[includeIf "gitdir:~/NAS/git-dnlc/"]
+  path = ~/.gitconfig-dnlc
+[includeIf "gitdir:~/git/"]
+  path = ~/.gitconfig-personal
+[includeIf "gitdir:~/git-work/"]
+  path = ~/.gitconfig-work
+
+[core]
+	editor = cursor --wait
+	autocrlf = input
+	precomposeunicode = true
+	quotepath = false
+	preloadindex = true
+	fscache = true
+	excludesfile = ~/.gitignore_global
+
+[push]
+	default = simple
+	followTags = true
+
+[pull]
+	rebase = true
+
+[merge]
+	tool = cursor
+	conflictstyle = diff3
+
+[mergetool "cursor"]
+	cmd = cursor --wait $MERGED
+
+[diff]
+	tool = cursor
+
+[difftool "cursor"]
+	cmd = cursor --wait --diff $LOCAL $REMOTE
+
+[rebase]
+	autoStash = true
+
+[fetch]
+	prune = true
+	fsckobjects = true
+
+[init]
+	defaultBranch = main
+
+[color]
+	ui = auto
+	branch = auto
+	diff = auto
+	status = auto
+
+[color "branch"]
+	current = yellow reverse
+	local = yellow
+	remote = green
+
+[color "diff"]
+	meta = yellow bold
+	frag = magenta bold
+	old = red bold
+	new = green bold
+
+[color "status"]
+	added = yellow
+	changed = green
+	untracked = cyan
+
+[transfer]
+	fsckobjects = true
+
+[receive]
+	fsckObjects = true
+
+[gc]
+	auto = 256

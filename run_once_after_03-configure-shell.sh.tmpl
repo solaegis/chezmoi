@@ -1,0 +1,128 @@
+#!/bin/bash
+
+# ============================================================================
+# Configure shell environment (run once after applying dotfiles)
+# ============================================================================
+
+{{- if eq .chezmoi.os "darwin" }}
+
+set -e
+
+echo "Configuring shell environment..."
+
+# Set zsh as default shell if not already
+if [[ "$SHELL" != "$(which zsh)" ]]; then
+    echo "Setting zsh as default shell..."
+    chsh -s "$(which zsh)"
+    echo "✓ Default shell changed to zsh (restart terminal to apply)"
+else
+    echo "✓ zsh is already the default shell"
+fi
+
+# Install Oh My Zsh if not present
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+    echo "Installing Oh My Zsh..."
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    echo "✓ Oh My Zsh installed"
+else
+    echo "✓ Oh My Zsh already installed"
+fi
+
+# Install Powerlevel10k theme (Intel & Apple Silicon Mac compatible)
+P10K_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
+if [ ! -d "$P10K_DIR" ]; then
+    echo "Installing Powerlevel10k theme..."
+    if git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$P10K_DIR"; then
+        echo "✓ Powerlevel10k installed to $P10K_DIR"
+    else
+        echo "❌ Failed to install Powerlevel10k"
+    fi
+else
+    echo "✓ Powerlevel10k already installed at $P10K_DIR"
+    
+    # Update if it's a git repository
+    if [ -d "$P10K_DIR/.git" ]; then
+        echo "  → Updating Powerlevel10k..."
+        (cd "$P10K_DIR" && git pull --quiet) || echo "  ⚠️  Update failed (continuing)"
+    fi
+fi
+
+# Verify theme file exists and is readable
+P10K_THEME="$P10K_DIR/powerlevel10k.zsh-theme"
+if [ -f "$P10K_THEME" ] && [ -r "$P10K_THEME" ]; then
+    echo "✓ Powerlevel10k theme verified at: $P10K_THEME"
+else
+    echo "❌ Powerlevel10k theme not found or not readable"
+fi
+
+# Install zsh-autosuggestions plugin
+ZSH_AUTOSUGGESTIONS_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
+if [ ! -d "$ZSH_AUTOSUGGESTIONS_DIR" ]; then
+    echo "Installing zsh-autosuggestions..."
+    git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_AUTOSUGGESTIONS_DIR"
+    echo "✓ zsh-autosuggestions installed"
+else
+    echo "✓ zsh-autosuggestions already installed"
+fi
+
+# Install zsh-syntax-highlighting plugin
+ZSH_SYNTAX_HIGHLIGHTING_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
+if [ ! -d "$ZSH_SYNTAX_HIGHLIGHTING_DIR" ]; then
+    echo "Installing zsh-syntax-highlighting..."
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_SYNTAX_HIGHLIGHTING_DIR"
+    echo "✓ zsh-syntax-highlighting installed"
+else
+    echo "✓ zsh-syntax-highlighting already installed"
+fi
+
+# Fix zsh completion directory permissions (Intel & Apple Silicon Mac compatible)
+echo "Fixing zsh completion directory permissions..."
+
+# Define all possible Homebrew paths (Intel and Apple Silicon)
+HOMEBREW_PATHS=(
+    "/opt/homebrew"     # Apple Silicon Mac
+    "/usr/local"        # Intel Mac
+)
+
+for brew_path in "${HOMEBREW_PATHS[@]}"; do
+    if [ -d "$brew_path" ]; then
+        echo "  → Checking $brew_path directories..."
+        
+        # Fix zsh site-functions directory
+        ZSH_SITE_FUNCTIONS="$brew_path/share/zsh/site-functions"
+        if [ -d "$ZSH_SITE_FUNCTIONS" ]; then
+            chmod -R go-w "$ZSH_SITE_FUNCTIONS" 2>/dev/null || true
+            echo "    ✓ Fixed permissions on $ZSH_SITE_FUNCTIONS"
+        fi
+        
+        # Fix zsh-completions directory
+        ZSH_COMPLETIONS="$brew_path/share/zsh-completions"
+        if [ -d "$ZSH_COMPLETIONS" ]; then
+            chmod -R go-w "$ZSH_COMPLETIONS" 2>/dev/null || true
+            echo "    ✓ Fixed permissions on $ZSH_COMPLETIONS"
+        fi
+    fi
+done
+
+# Also fix any active brew prefix if brew is available
+if command -v brew &> /dev/null; then
+    ACTIVE_BREW_PREFIX="$(brew --prefix)"
+    ZSH_SITE_FUNCTIONS="$ACTIVE_BREW_PREFIX/share/zsh/site-functions"
+    if [ -d "$ZSH_SITE_FUNCTIONS" ]; then
+        chmod -R go-w "$ZSH_SITE_FUNCTIONS" 2>/dev/null || true
+        echo "  ✓ Fixed permissions on active brew prefix: $ZSH_SITE_FUNCTIONS"
+    fi
+fi
+
+# Clear any existing completion cache to avoid stale warnings
+if [ -n "$ZSH_COMPDUMP" ] && [ -f "$ZSH_COMPDUMP" ]; then
+    rm -f "$ZSH_COMPDUMP" "$ZSH_COMPDUMP".zwc
+    echo "✓ Cleared completion cache"
+fi
+
+echo "✓ Shell configuration complete"
+echo ""
+echo "NOTE: Restart your terminal for all changes to take effect"
+echo "      The compinit security warning should no longer appear."
+
+{{- end }}

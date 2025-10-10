@@ -1,0 +1,7 @@
+export PATH="/usr/local/sbin:$PATH"
+
+# get aliases and functions
+if [ -f ~/.bashrc ]; then
+  . ~/.bashrc
+fi
+. "$HOME/.cargo/env"

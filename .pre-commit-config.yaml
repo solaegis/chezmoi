@@ -1,0 +1,75 @@
+---
+repos:
+  # Basic file hygiene and format validation
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: debug-statements
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+
+  # Shell script validation
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        args: [--severity=warning]
+        types: [shell]
+
+  # Additional config file validation
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.37.1
+    hooks:
+      - id: yamllint
+        args: [--format, parsable, --strict]
+
+  # INI file validation
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.15.0
+    hooks:
+      - id: pretty-format-ini
+        args: [--autofix]
+
+  # Dotenv file validation
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.15.0
+    hooks:
+      - id: pretty-format-toml
+        args: [--autofix]
+
+  # Go template validation for chezmoi .tmpl files
+  - repo: local
+    hooks:
+      - id: chezmoi-template-syntax
+        name: Validate chezmoi template syntax
+        entry: go
+        args: [run, -c, 'package main; import ("text/template"; "os"); func main() { _, err := template.ParseFiles(os.Args[1]); if err != nil { panic(err) } }']
+        language: system
+        files: '\.tmpl$'
+        pass_filenames: true
+
+  # Chezmoi validation hooks
+  - repo: local
+    hooks:
+      - id: chezmoi-verify
+        name: Chezmoi dry-run verification
+        entry: chezmoi
+        args: [apply, --dry-run, --verbose]
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: chezmoi-diff
+        name: Chezmoi diff check
+        entry: bash
+        args: [-c, 'chezmoi diff --exit-on-error || (echo "Chezmoi state differs from target state" && exit 1)']
+        language: system
+        pass_filenames: false
+        always_run: true

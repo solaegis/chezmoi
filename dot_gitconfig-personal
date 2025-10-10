@@ -1,0 +1,5 @@
+[user]
+	name = Lewis Vavasour
+	email = lewis.vavasour@gmail.com
+[credential]
+	helper = osxkeychain

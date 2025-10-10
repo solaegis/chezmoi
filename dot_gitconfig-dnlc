@@ -1,0 +1,8 @@
+[user]
+	name = Dad and Lad Co
+	email = dadandlad.co@gmail.com
+[credential]
+	helper = osxkeychain
+
+[core]
+	sshCommand = "ssh -i ~/.ssh/id_rsa_dnlc"

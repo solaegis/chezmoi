@@ -1,0 +1,394 @@
+---
+version: '3'
+
+# Chezmoi Dotfiles Development Taskfile
+# Provides standardized commands for managing this dotfiles repository
+
+vars:
+  CHEZMOI_SOURCE: "{{.USERPROFILE}}/.local/share/chezmoi"
+  CHEZMOI_CONFIG: "{{.USERPROFILE}}/.config/chezmoi"
+  GITHUB_USER: "solaegis"
+  GITHUB_REPO: "chezmoi"
+
+tasks:
+  # ============================================================================
+  # Development Setup Tasks
+  # ============================================================================
+
+  setup:init:
+    desc: "Initial development setup"
+    cmds:
+      - task: tools:check
+      - task: tools:install-homebrew
+      - task: tools:install
+      - task: chezmoi:init
+      - task: setup:verify
+
+  setup:verify:
+    desc: "Verify development setup"
+    cmds:
+      - chezmoi doctor
+      - chezmoi status
+      - echo "✅ Development setup verified"
+
+  # ============================================================================
+  # Tool Management Tasks
+  # ============================================================================
+
+  tools:check:
+    desc: "Check if required tools are installed"
+    cmds:
+      - |
+        echo "Checking required tools..."
+        command -v brew >/dev/null || echo "❌ Homebrew not found (recommended)"
+        command -v chezmoi >/dev/null || echo "❌ chezmoi not found"
+        command -v git >/dev/null || echo "❌ git not found"
+        command -v curl >/dev/null || echo "❌ curl not found"
+        command -v task >/dev/null || echo "❌ task not found"
+        echo "✅ Tool check complete"
+
+  tools:install-homebrew:
+    desc: "Install Homebrew package manager"
+    cmds:
+      - |
+        if command -v brew >/dev/null; then
+          echo "✅ Homebrew already installed: $(brew --version | head -n1)"
+        else
+          echo "Installing Homebrew..."
+          /bin/bash -c "$(curl -fsSL \
+            https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          
+          # Add Homebrew to PATH for this session
+          if [[ -f "/opt/homebrew/bin/brew" ]]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+          elif [[ -f "/usr/local/bin/brew" ]]; then
+            eval "$(/usr/local/bin/brew shellenv)"
+          fi
+          
+          echo "✅ Homebrew installed successfully"
+        fi
+
+  tools:install:
+    desc: "Install development tools (prefers Homebrew)"
+    cmds:
+      - task: tools:install-homebrew
+      - |
+        # Install chezmoi via Homebrew (preferred)
+        if ! command -v chezmoi >/dev/null; then
+          echo "Installing chezmoi via Homebrew..."
+          brew install chezmoi
+        else
+          echo "✅ Chezmoi already installed: $(chezmoi --version | head -n1)"
+        fi
+        
+        # Install additional development tools via Homebrew
+        echo "Installing additional development tools via Homebrew..."
+        # Install shellcheck for linting
+        if ! command -v shellcheck >/dev/null; then
+          brew install shellcheck
+        fi
+        # Install yamllint for YAML validation
+        if ! command -v yamllint >/dev/null; then
+          brew install yamllint
+        fi
+        # Install task runner if not already installed
+        if ! command -v task >/dev/null; then
+          brew install go-task/tap/go-task
+        fi
+
+  # ============================================================================
+  # Chezmoi Management Tasks
+  # ============================================================================
+
+  chezmoi:init:
+    desc: "Initialize chezmoi for development"
+    cmds:
+      - |
+        if [ ! -d "{{.CHEZMOI_SOURCE}}/.git" ]; then
+          echo "Initializing chezmoi repository..."
+          chezmoi init --apply=false .
+        else
+          echo "Chezmoi already initialized"
+        fi
+
+  chezmoi:status:
+    desc: "Show chezmoi status"
+    cmds:
+      - chezmoi status
+
+  chezmoi:diff:
+    desc: "Show what would change"
+    cmds:
+      - chezmoi diff
+
+  chezmoi:apply:
+    desc: "Apply dotfiles"
+    cmds:
+      - chezmoi apply -v
+
+  chezmoi:update:
+    desc: "Update and apply dotfiles"
+    cmds:
+      - chezmoi update -v
+
+  chezmoi:managed:
+    desc: "List managed files"
+    cmds:
+      - chezmoi managed
+
+  chezmoi:data:
+    desc: "Show configuration data"
+    cmds:
+      - chezmoi data
+
+  chezmoi:doctor:
+    desc: "Run chezmoi doctor"
+    cmds:
+      - chezmoi doctor
+
+  chezmoi:add:
+    desc: "Add a file to chezmoi management"
+    cmds:
+      - chezmoi add {{.CLI_ARGS}}
+
+  chezmoi:edit:
+    desc: "Edit a managed file"
+    cmds:
+      - chezmoi edit {{.CLI_ARGS}}
+
+  chezmoi:remove:
+    desc: "Remove a file from chezmoi management"
+    cmds:
+      - chezmoi remove {{.CLI_ARGS}}
+
+  # ============================================================================
+  # Testing Tasks
+  # ============================================================================
+
+  test:minimal:
+    desc: "Test minimal installation script"
+    cmds:
+      - |
+        echo "Testing minimal installation script..."
+        bash install-minimal.sh
+
+  test:comprehensive:
+    desc: "Test comprehensive installation script"
+    cmds:
+      - |
+        echo "Testing comprehensive installation script..."
+        bash install-comprehensive.sh
+
+  test:dry-run:
+    desc: "Test dotfiles without applying"
+    cmds:
+      - chezmoi diff
+      - chezmoi managed
+      - chezmoi data
+
+  test:templates:
+    desc: "Test template rendering"
+    cmds:
+      - |
+        echo "Testing template rendering..."
+        for template in $(find . -name "*.tmpl" -type f); do
+          echo "Testing $template..."
+          chezmoi execute-template < "$template" > /dev/null || \
+            echo "❌ $template failed"
+        done
+        echo "✅ Template testing complete"
+
+  # ============================================================================
+  # Git Management Tasks
+  # ============================================================================
+
+  git:status:
+    desc: "Show git status"
+    cmds:
+      - git status
+
+  git:diff:
+    desc: "Show git diff"
+    cmds:
+      - git diff
+
+  git:add:
+    desc: "Add changes to git"
+    cmds:
+      - git add {{.CLI_ARGS}}
+
+  git:commit:
+    desc: "Commit changes"
+    cmds:
+      - git commit -m "{{.CLI_ARGS}}"
+
+  git:push:
+    desc: "Push changes to remote"
+    cmds:
+      - git push
+
+  git:pull:
+    desc: "Pull changes from remote"
+    cmds:
+      - git pull
+
+  git:log:
+    desc: "Show git log"
+    cmds:
+      - git log --oneline -10
+
+  # ============================================================================
+  # Workflow Tasks
+  # ============================================================================
+
+  workflow:dev:
+    desc: "Complete development workflow"
+    cmds:
+      - task: tools:check
+      - task: git:status
+      - task: chezmoi:diff
+      - task: test:templates
+      - echo "✅ Development workflow complete"
+
+  workflow:commit:
+    desc: "Commit and push workflow"
+    cmds:
+      - task: git:add
+      - task: git:commit
+      - task: git:push
+
+  workflow:update:
+    desc: "Update and test workflow"
+    cmds:
+      - task: git:pull
+      - task: chezmoi:update
+      - task: test:dry-run
+
+  # ============================================================================
+  # Installation Tasks
+  # ============================================================================
+
+  install:minimal:
+    desc: "Run minimal installation"
+    cmds:
+      - bash install-minimal.sh
+
+  install:comprehensive:
+    desc: "Run comprehensive installation"
+    cmds:
+      - bash install-comprehensive.sh
+
+  # ============================================================================
+  # Documentation Tasks
+  # ============================================================================
+
+  docs:serve:
+    desc: "Serve documentation locally"
+    cmds:
+      - |
+        if command -v python3 >/dev/null; then
+          python3 -m http.server 8000
+        elif command -v python >/dev/null; then
+          python -m SimpleHTTPServer 8000
+        else
+          echo "Python not found, cannot serve docs"
+        fi
+
+  docs:build:
+    desc: "Build documentation"
+    cmds:
+      - |
+        echo "Building documentation..."
+        # Add any documentation build steps here
+        echo "✅ Documentation built"
+
+  # ============================================================================
+  # Maintenance Tasks
+  # ============================================================================
+
+  maintenance:clean:
+    desc: "Clean up temporary files"
+    cmds:
+      - |
+        echo "Cleaning up temporary files..."
+        find . -name "*.tmp" -delete
+        find . -name ".DS_Store" -delete
+        echo "✅ Cleanup complete"
+
+  maintenance:backup:
+    desc: "Create backup of current state"
+    cmds:
+      - |
+        BACKUP_DIR="backup-$(date +%Y%m%d_%H%M%S)"
+        echo "Creating backup: $BACKUP_DIR"
+        cp -r . "../$BACKUP_DIR"
+        echo "✅ Backup created: ../$BACKUP_DIR"
+
+  maintenance:reset:
+    desc: "Reset to clean state"
+    cmds:
+      - |
+        echo "Resetting to clean state..."
+        git clean -fd
+        git reset --hard HEAD
+        echo "✅ Reset complete"
+
+  # ============================================================================
+  # Validation Tasks
+  # ============================================================================
+
+  validate:repo:
+    desc: "Validate repository structure and files"
+    cmds:
+      - |
+        echo "Validating repository structure..."
+        
+        # Check required files
+        [ -f "install-comprehensive.sh" ] || \
+          echo "❌ install-comprehensive.sh missing"
+        [ -f "install-minimal.sh" ] || echo "❌ install-minimal.sh missing"
+        [ -f "README.md" ] || echo "❌ README.md missing"
+        
+        # Check script permissions
+        [ -x "install-comprehensive.sh" ] || \
+          echo "❌ install-comprehensive.sh not executable"
+        [ -x "install-minimal.sh" ] || \
+          echo "❌ install-minimal.sh not executable"
+        
+        # Check chezmoi files
+        chezmoi doctor || echo "❌ Chezmoi validation failed"
+        
+        echo "✅ Validation complete"
+
+  validate:lint:
+    desc: "Lint shell scripts"
+    cmds:
+      - |
+        if command -v shellcheck >/dev/null; then
+          echo "Linting shell scripts..."
+          shellcheck install-comprehensive.sh
+          shellcheck install-minimal.sh
+          echo "✅ Linting complete"
+        else
+          echo "❌ shellcheck not found, install with: brew install shellcheck"
+        fi
+
+  # ============================================================================
+  # Help Tasks
+  # ============================================================================
+
+  help:list:
+    desc: "Show available tasks"
+    cmds:
+      - task --list
+
+  # ============================================================================
+  # Default Task
+  # ============================================================================
+
+  default:
+    desc: "Show help and status"
+    cmds:
+      - task: help:list
+      - echo ""
+      - task: chezmoi:status
