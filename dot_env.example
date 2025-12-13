@@ -1,0 +1,47 @@
+# .env.example - Snowflake API Configuration Template
+# Copy this to .env and customize
+
+# =================
+# DEPLOYMENT CONFIG
+# =================
+ENVIRONMENT=development
+AWS_DEFAULT_REGION=us-west-2
+
+# =================
+# SNOWFLAKE CONFIG
+# =================
+SNOWFLAKE_MOCK_MODE=true
+SNOWFLAKE_ENDPOINT=
+SNOWFLAKE_USER=
+SNOWFLAKE_ROLE=GLOBALORGADMIN
+
+# =================
+# API CONFIGURATION
+# =================
+API_TITLE=Snowflake API
+API_DESCRIPTION=Snowflake Account Management API
+API_VERSION=1.0.0
+
+# =================
+# JWT CONFIGURATION
+# =================
+JWT_SECRET_KEY=your_super_secret_jwt_key_for_development_only
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# =================
+# DATABASE
+# =================
+DATABASE_URL=sqlite:///./data/snowflake_api.db
+
+# =================
+# LOGGING
+# =================
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+
+# =================
+# CORS & SECURITY
+# =================
+CORS_ORIGINS=["http://localhost:3000","http://localhost:8000"]
+CORS_CREDENTIALS=true
