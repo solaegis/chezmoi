@@ -5,8 +5,10 @@ version: '3'
 # Provides standardized commands for managing this dotfiles repository
 
 vars:
-  CHEZMOI_SOURCE: "{{.USERPROFILE}}/.local/share/chezmoi"
-  CHEZMOI_CONFIG: "{{.USERPROFILE}}/.config/chezmoi"
+  CHEZMOI_SOURCE:
+    sh: chezmoi source-path
+  CHEZMOI_CONFIG:
+    sh: echo "$(dirname $(chezmoi source-path))/../config/chezmoi" | sed 's|/share/../config|/config|'
   GITHUB_USER: "solaegis"
   GITHUB_REPO: "chezmoi"
 
@@ -30,6 +32,19 @@ tasks:
       - chezmoi doctor
       - chezmoi status
       - echo "✅ Development setup verified"
+
+  setup:pre-commit:
+    desc: "Install and configure pre-commit hooks"
+    cmds:
+      - |
+        if ! command -v pre-commit &>/dev/null; then
+          echo "Installing pre-commit..."
+          brew install pre-commit
+        fi
+        cd {{.CHEZMOI_SOURCE}}
+        pre-commit install
+        pre-commit run --all-files || true
+        echo "✅ Pre-commit hooks installed"
 
   # ============================================================================
   # Tool Management Tasks
@@ -160,6 +175,43 @@ tasks:
     desc: "Remove a file from chezmoi management"
     cmds:
       - chezmoi remove {{.CLI_ARGS}}
+
+  chezmoi:encrypt:
+    desc: "Add an encrypted file to chezmoi"
+    cmds:
+      - chezmoi add --encrypt {{.CLI_ARGS}}
+
+  # ============================================================================
+  # Security Tasks
+  # ============================================================================
+
+  security:audit:
+    desc: "Audit for secrets in dotfiles"
+    cmds:
+      - |
+        echo "Scanning for potential secrets..."
+        if command -v trufflehog &>/dev/null; then
+          trufflehog filesystem {{.CHEZMOI_SOURCE}}
+        else
+          echo "⚠️  trufflehog not found"
+          echo "Install with: brew install trufflehog"
+        fi
+
+  # ============================================================================
+  # Dependency Management
+  # ============================================================================
+
+  deps:update:
+    desc: "Update Homebrew, Oh My Zsh, plugins, and chezmoi"
+    cmds:
+      - |
+        echo "Updating Homebrew..."
+        brew update && brew upgrade
+        echo "Updating Oh My Zsh..."
+        omz update || true
+        echo "Updating chezmoi dotfiles..."
+      - task: chezmoi:update
+      - echo "✅ All dependencies updated"
 
   # ============================================================================
   # Testing Tasks

@@ -45,13 +45,9 @@ else
   alias egrep='egrep --color=auto'
 fi
 
-# Better find with fd
-if command -v fd &> /dev/null; then
-  alias find='fd'
-  alias findi='fd -i'
-  alias findt='fd -t f'  # files only
-  alias findd='fd -t d'  # directories only
-fi
+# Find aliases (using standard find)
+alias findt='find . -type f'  # files only
+alias findd='find . -type d'  # directories only
 
 # Better du with dust
 if command -v dust &> /dev/null; then

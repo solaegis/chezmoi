@@ -1,356 +1,81 @@
-# Automated Installation Guide
+# Chezmoi Dotfiles Configuration
 
-This repository includes comprehensive automation for installing chezmoi and your dotfiles on a new Mac.
+**Automated dotfile management for macOS** • [GitHub](https://github.com/solaegis/chezmoi)
 
-## Quick Start
+> Professional dotfiles managed with [chezmoi](https://www.chezmoi.io/), featuring age encryption, machine-specific templating, and comprehensive automation.
 
-### One-Line Comprehensive Installation
+---
 
-For a complete, automated setup on a new Mac:
+## 🚀 Quick Start
 
+### One-Line Installation
+
+**Full automated setup** (new machine):
 ```bash
 curl -fsLS https://raw.githubusercontent.com/solaegis/chezmoi/main/install-comprehensive.sh | bash
 ```
 
-This will:
-- ✓ Install Xcode Command Line Tools
-- ✓ Install Homebrew
-- ✓ Install chezmoi
-- ✓ Clone your dotfiles
-- ✓ Detect machine type (work/personal)
-- ✓ Apply dotfiles with templates
-- ✓ Install packages based on machine type
-- ✓ Configure shell (Oh My Zsh, Powerlevel10k, plugins)
-
-### Minimal Test Installation
-
-To test configuration detection without applying dotfiles:
-
+**Test installation** (dry-run, no changes):
 ```bash
 curl -fsLS https://raw.githubusercontent.com/solaegis/chezmoi/main/install-minimal.sh | bash
 ```
 
 This will:
-- ✓ Detect machine type (work/personal)
-- ✓ Install chezmoi (if needed)
-- ✓ Clone repository
-- ✓ Show what would be applied (dry-run)
-- ✗ **Does NOT apply** any dotfiles
+- ✅ Install Xcode Command Line Tools, Homebrew, and chezmoi
+- ✅ Auto-detect machine type (work/personal)
+- ✅ Clone and apply your dotfiles
+- ✅ Install packages based on machine type
+- ✅ Configure shell (Oh My Zsh, Powerlevel10k, plugins)
 
-Perfect for:
-- Testing on a new machine
-- Validating templates
-- Developing conditional configurations
-- Previewing changes before committing
+---
 
-## Installation Scripts
+## 📋 What's Included
 
-### 1. Comprehensive Installation (`install-comprehensive.sh`)
+### Core Features
+- 🔐 **Age encryption** for sensitive files
+- 🎯 **Machine-specific templates** (work vs personal)
+- 🤖 **Taskfile automation** (40+ commands)
+- 📦 **Brewfile** for package management
+- 🐚 **Modular zsh configuration**
+- 🔄 **Run-once scripts** for reproducible setups
+- ✅ **Pre-commit hooks** for validation
 
-**Purpose:** Complete automation for production use
+### Managed Files
+- Shell: `.zshrc`, `.zshenv`, `.zprofile`, `.bashrc`
+- Git: `.gitconfig`, `.gitignore_global`
+- Tools: Vim, iTerm2, SSH agent
+- Packages: Homebrew Brewfile
+- Configuration: zsh modules, aliases, functions
 
-**Features:**
-- Installs all dependencies (Xcode, Homebrew, chezmoi)
-- Auto-detects machine type (work/personal) based on hostname
-- Prompts for user information (email, name, GitHub username)
-- Applies all dotfiles with proper templating
-- Runs all `run_once_*` scripts for package installation
-- Configures shell environment
-- Interactive confirmations at key steps
+---
 
-**Usage:**
+## 🛠️ Installation Options
+
+### Comprehensive Installation
+For production use on a new machine:
 ```bash
-# Via curl
 curl -fsLS https://raw.githubusercontent.com/solaegis/chezmoi/main/install-comprehensive.sh | bash
-
-# Or download and run
-wget https://raw.githubusercontent.com/solaegis/chezmoi/main/install-comprehensive.sh
-chmod +x install-comprehensive.sh
-./install-comprehensive.sh
 ```
 
-**Environment Variables:**
+Includes: All dependencies + package installation + shell configuration
+
+### Minimal Installation
+For testing without applying changes:
 ```bash
-# Customize repository
-export CHEZMOI_GITHUB_USER="your-username"
-export CHEZMOI_GITHUB_REPO="your-repo"
-export CHEZMOI_GITHUB_BRANCH="your-branch"
-
-curl -fsLS https://raw.githubusercontent.com/${CHEZMOI_GITHUB_USER}/${CHEZMOI_GITHUB_REPO}/${CHEZMOI_GITHUB_BRANCH}/install-comprehensive.sh | bash
-```
-
-### 2. Minimal Test Installation (`install-minimal.sh`)
-
-**Purpose:** Safe testing and development
-
-**Features:**
-- Minimal installation (just chezmoi)
-- Shows diffs without applying
-- Tests machine type detection
-- Validates template rendering
-- No destructive changes
-- Easy cleanup
-
-**Usage:**
-```bash
-# Via curl
 curl -fsLS https://raw.githubusercontent.com/solaegis/chezmoi/main/install-minimal.sh | bash
-
-# Or download and run
-wget https://raw.githubusercontent.com/solaegis/chezmoi/main/install-minimal.sh
-chmod +x install-minimal.sh
-./install-minimal.sh
 ```
 
-**Workflow:**
-1. Run minimal install on test machine
-2. Review configuration and diffs
-3. If everything looks good, apply changes:
-   ```bash
-   chezmoi apply -v
-   ```
-4. Or start over:
-   ```bash
-   rm -rf ~/.local/share/chezmoi
-   ```
-
-## Machine-Specific Configuration
-
-The installation system supports different configurations for work and personal machines.
-
-### Machine Type Detection
-
-The system automatically detects machine type based on hostname:
-- Contains "work", "corp", "company", or "office" → **WORK**
-- Otherwise → **PERSONAL**
-
-You can override during installation when prompted.
-
-### Configuration File (`.chezmoidata.yaml`)
-
-After first run, your configuration is stored in `~/.config/chezmoi/.chezmoidata.yaml`:
-
-```yaml
-machine_type: "work"  # or "personal"
-email: "your@email.com"
-github_user: "solaegis"
-full_name: "Your Name"
-hostname: "your-hostname"
-os: "darwin"
-arch: "arm64"
-
-# Conditional flags
-is_work: true
-is_personal: false
-git_work_enabled: true
-vpn_required: true
-
-# Package installation preferences
-install_dev_tools: true
-install_cloud_tools: true  # work only
-install_gaming_tools: false  # personal only
-```
-
-### Using Configuration in Templates
-
-In any `.tmpl` file, you can use these values:
-
-```bash
-# ~/.zshrc.tmpl
-{{- if .is_work }}
-# Work-specific configuration
-export WORK_PROXY="http://proxy.company.com:8080"
-alias vpn="sudo openconnect vpn.company.com"
-{{- end }}
-
-{{- if .is_personal }}
-# Personal configuration
-export HOBBY_PROJECT_DIR="~/projects"
-{{- end }}
-
-# Common configuration
-export EMAIL="{{ .email }}"
-export GITHUB_USER="{{ .github_user }}"
-```
-
-## Run-Once Scripts
-
-These scripts run automatically during `chezmoi apply`:
-
-### `run_once_before_01-install-homebrew.sh`
-- Runs **before** applying dotfiles
-- Installs Homebrew if not present
-- macOS only
-
-### `run_once_after_02-install-packages.sh`
-- Runs **after** applying dotfiles
-- Installs packages based on machine type:
-  - **Essential:** git, curl, vim, direnv, jq, ripgrep, etc.
-  - **Dev Tools:** go, python3, node, rust (if enabled)
-  - **Work:** terraform, gcloud, awscli, kubectl (work only)
-  - **Personal:** gaming/media tools (personal only)
-
-### `run_once_after_03-configure-shell.sh`
-- Runs **after** applying dotfiles
-- Sets zsh as default shell
-- Installs Oh My Zsh
-- Installs Powerlevel10k theme
-- Installs zsh plugins (autosuggestions, syntax-highlighting)
-
-### Force Re-running Scripts
-
-Run-once scripts only execute once. To re-run:
-
-```bash
-# Re-run all
-chezmoi state delete-bucket --bucket=scriptState
-
-# Re-run specific script
-rm ~/.config/chezmoi/chezmoistate.boltdb
-chezmoi apply -v
-```
-
-## Development Workflow
-
-### Testing New Configurations
-
-1. **Test on current machine:**
-   ```bash
-   chezmoi diff
-   chezmoi apply --dry-run -v
-   ```
-
-2. **Test on new machine (minimal):**
-   ```bash
-   curl -fsLS https://raw.githubusercontent.com/solaegis/chezmoi/main/install-minimal.sh | bash
-   # Review output
-   rm -rf ~/.local/share/chezmoi  # Clean up
-   ```
-
-3. **Commit and push changes:**
-   ```bash
-   chezmoi cd
-   git add .
-   git commit -m "Update configurations"
-   git push
-   ```
-
-4. **Full test installation:**
-   ```bash
-   curl -fsLS https://raw.githubusercontent.com/solaegis/chezmoi/main/install-comprehensive.sh | bash
-   ```
-
-### Adding Machine-Specific Configurations
-
-1. **Edit template files:**
-   ```bash
-   chezmoi edit ~/.zshrc
-   ```
-
-2. **Add conditionals:**
-   ```bash
-   {{- if .is_work }}
-   # Work-specific code
-   {{- end }}
-   ```
-
-3. **Test locally:**
-   ```bash
-   chezmoi diff
-   chezmoi apply
-   ```
-
-4. **Test with minimal install** on another machine
-
-5. **Commit when ready:**
-   ```bash
-   chezmoi cd
-   git add .
-   git commit -m "Add work-specific configuration"
-   git push
-   ```
-
-## Troubleshooting
-
-### Check Configuration Data
-
-```bash
-chezmoi data
-```
-
-### View Rendered Template
-
-```bash
-chezmoi cat ~/.zshrc
-```
-
-### See What Would Change
-
-```bash
-chezmoi diff
-```
-
-### Re-initialize
-
-```bash
-# Backup current
-mv ~/.local/share/chezmoi ~/.local/share/chezmoi.backup
-
-# Re-initialize
-chezmoi init --apply=false solaegis/chezmoi
-chezmoi diff
-chezmoi apply -v
-```
-
-### Debug Templates
-
-```bash
-# Check for template errors
-chezmoi execute-template < ~/.local/share/chezmoi/dot_zshrc.tmpl
-
-# Verbose apply
-chezmoi apply -v
-```
-
-### Clean State and Restart
-
-```bash
-# Remove chezmoi completely
-rm -rf ~/.local/share/chezmoi
-rm -rf ~/.config/chezmoi
-
-# Reinstall
-curl -fsLS https://raw.githubusercontent.com/solaegis/chezmoi/main/install-comprehensive.sh | bash
-```
-
-## Advanced Usage
-
-### Environment Variables
-
-Control installation behavior:
-
-```bash
-# Use different repository
-export CHEZMOI_GITHUB_USER="your-username"
-export CHEZMOI_GITHUB_REPO="dotfiles"
-
-# Force machine type
-export CHEZMOI_MACHINE_TYPE="work"
-
-# Skip interactive prompts (use defaults)
-export CHEZMOI_NON_INTERACTIVE="true"
-```
+Perfect for: Testing templates, validating configurations, development
 
 ### Custom Installation
-
 ```bash
-# Install chezmoi only (no apply)
+# Install chezmoi only
 brew install chezmoi
 
 # Initialize without applying
 chezmoi init --apply=false solaegis/chezmoi
 
-# Review
+# Review changes
 chezmoi diff
 
 # Apply selectively
@@ -361,10 +86,134 @@ chezmoi apply ~/.gitconfig
 chezmoi apply -v
 ```
 
-### Update Existing Installation
+---
+
+## 🎯 Machine-Specific Configuration
+
+### Auto-Detection
+The system automatically detects machine type based on hostname:
+- Contains `work`, `corp`, `company`, `office` → **WORK**
+- Otherwise → **PERSONAL**
+
+### Configuration Variables
+After installation, configuration is stored in `~/.config/chezmoi/.chezmoidata.yaml`:
+
+```yaml
+machine_type: "work"  # or "personal"
+email: "your@email.com"
+github_user: "solaegis"
+full_name: "Your Name"
+
+# Conditional flags
+is_work: true
+is_personal: false
+install_dev_tools: true
+install_cloud_tools: true  # work only
+```
+
+### Using Templates
+```bash
+# ~/.zshrc.tmpl
+{{- if .is_work }}
+export WORK_PROXY="http://proxy.company.com:8080"
+{{- end }}
+
+{{- if .is_personal }}
+export HOBBY_DIR="~/projects"
+{{- end }}
+
+# Common
+export EMAIL="{{ .email }}"
+```
+
+---
+
+## 📚 Taskfile Commands
+
+Run `task` or `task --list` to see all available commands.
+
+### Essential Commands
+```bash
+# Development
+task chezmoi:status          # Show status
+task chezmoi:diff            # See what would change
+task chezmoi:apply           # Apply changes
+task chezmoi:update          # Pull and apply updates
+
+# Templates
+task test:templates          # Validate all templates
+task test:dry-run           # Test without applying
+
+# Git
+task git:status             # Git status
+task git:push               # Push changes
+
+# Maintenance
+task maintenance:clean      # Clean temp files
+task validate:repo          # Validate repository
+```
+
+See [detailed Taskfile documentation](docs/TASKFILE.md) for all 40+ commands.
+
+---
+
+## 🔒 Security & Encryption
+
+### Age Encryption
+This setup uses [age](https://github.com/FiloSottile/age) for encrypting sensitive files:
 
 ```bash
-# Pull latest changes and apply
+# Add encrypted file
+chezmoi add --encrypt ~/.ssh/id_rsa
+task chezmoi:encrypt ~/.ssh/id_rsa  # Using Taskfile
+
+# View encrypted file
+chezmoi cat ~/.ssh/id_rsa
+```
+
+**Key Management:**
+- Identity: `~/.config/chezmoi/key.txt`
+- Recipient: Configured in `chezmoi.toml`
+- **Backup your key!** See [Security Documentation](docs/SECURITY.md)
+
+---
+
+## 🔄 Run-Once Scripts
+
+Scripts that execute automatically during `chezmoi apply`:
+
+1. **`run_once_before_01-install-homebrew.sh`**
+   - Installs Homebrew (macOS only)
+   - Runs before applying dotfiles
+
+2. **`run_once_after_02-install-packages.sh`**
+   - Installs packages from Brewfile
+   - Machine-specific packages (work/personal)
+
+3. **`run_once_after_03-configure-shell.sh`**
+   - Sets zsh as default shell
+   - Installs Oh My Zsh, Powerlevel10k
+   - Installs zsh plugins
+
+4. **`run_once_after_04-configure-timemachine.sh`**
+   - Configures Time Machine exclusions
+
+### Re-running Scripts
+```bash
+# Re-run all scripts
+chezmoi state delete-bucket --bucket=scriptState
+
+# Then apply
+chezmoi apply -v
+```
+
+---
+
+## 🔧 Common Tasks
+
+### Update Dotfiles
+```bash
+# Simple update
 chezmoi update
 
 # Or manually
@@ -374,20 +223,118 @@ exit
 chezmoi apply -v
 ```
 
-## Security Notes
+### Edit Managed Files
+```bash
+# Edit source file and apply
+chezmoi edit ~/.zshrc
+chezmoi apply
 
-1. **Secrets Management:** This configuration uses environment variables and prompts for sensitive data. Never commit secrets directly.
+# Or edit in place
+chezmoi edit --apply ~/.zshrc
+```
 
-2. **Review Before Applying:** Always review diffs before applying:
-   ```bash
-   chezmoi diff
-   ```
+### Add New Files
+```bash
+# Add file to chezmoi
+chezmoi add ~/.gitconfig
 
-3. **Test First:** Use the minimal installation script to test on new machines before committing to full installation.
+# Add encrypted file
+chezmoi add --encrypt ~/.ssh/config
+```
 
-4. **Private Files:** Files prefixed with `private_` are set to `0600` permissions automatically.
+### Debug Templates
+```bash
+# View configuration data
+chezmoi data
 
-## Next Steps
+# Test template rendering
+chezmoi execute-template < ~/.local/share/chezmoi/dot_zshrc.tmpl
+
+# View what file would become
+chezmoi cat ~/.zshrc
+```
+
+---
+
+## 🧪 Testing & Validation
+
+### Pre-commit Hooks
+```bash
+# Install hooks
+cd ~/.local/share/chezmoi
+pre-commit install
+
+# Run manually
+pre-commit run --all-files
+```
+
+### Template Validation
+```bash
+task test:templates
+```
+
+### Installation Testing
+```bash
+# Test minimal install
+task install:minimal
+
+# Test comprehensive install (careful!)
+task install:comprehensive
+```
+
+---
+
+## 📖 Documentation
+
+- **[Automation Guide](docs/AUTOMATION.md)** - Detailed automation documentation
+- **[SSH Agent Setup](docs/SSH_AGENT.md)** - SSH agent configuration
+- **[Taskfile Reference](docs/TASKFILE.md)** - All 40+ Taskfile commands
+- **[Security Guide](docs/SECURITY.md)** - Encryption and security best practices
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+
+---
+
+## 🔍 Troubleshooting
+
+### Check Configuration
+```bash
+chezmoi doctor           # System diagnostics
+chezmoi data            # View configuration variables
+chezmoi status          # See what would change
+```
+
+### View Rendered Templates
+```bash
+chezmoi cat ~/.zshrc    # See final output
+```
+
+### Reset Configuration
+```bash
+# Backup current
+mv ~/.local/share/chezmoi ~/.local/share/chezmoi.backup
+
+# Re-initialize
+chezmoi init --apply=false solaegis/chezmoi
+chezmoi diff
+chezmoi apply -v
+```
+
+### Common Issues
+
+**Problem:** Template errors  
+**Solution:** `chezmoi execute-template < file.tmpl` to debug
+
+**Problem:** Script won't re-run  
+**Solution:** `chezmoi state delete-bucket --bucket=scriptState`
+
+**Problem:** Permission denied  
+**Solution:** Check file permissions with `chezmoi managed -i files`
+
+See [full troubleshooting guide](docs/TROUBLESHOOTING.md) for more solutions.
+
+---
+
+## 🚀 Next Steps
 
 After installation:
 
@@ -395,13 +342,84 @@ After installation:
 2. **Review applied files:** `chezmoi managed`
 3. **Customize further:** `chezmoi edit <file>`
 4. **Keep updated:** `chezmoi update`
-
-## Resources
-
-- [Chezmoi Documentation](https://www.chezmoi.io/)
-- [Template Reference](https://www.chezmoi.io/reference/templates/)
-- [Your Repository](https://github.com/solaegis/chezmoi)
+5. **Explore Taskfile:** `task --list`
 
 ---
 
-*For detailed chezmoi usage, see [README.md](README.md)*
+## 📝 Development Workflow
+
+### Making Changes
+```bash
+# 1. Edit files
+chezmoi edit ~/.zshrc
+
+# 2. Test locally
+chezmoi diff
+chezmoi apply
+
+# 3. Commit changes
+chezmoi cd
+git add .
+git commit -m "Update zsh config"
+git push
+
+# 4. Update other machines
+chezmoi update
+```
+
+### Adding Machine-Specific Config
+```bash
+# Edit template
+chezmoi edit ~/.zshrc
+
+# Add conditional
+{{- if .is_work }}
+# Work-specific configuration
+{{- end }}
+
+# Test and apply
+chezmoi diff
+chezmoi apply
+```
+
+---
+
+## 🌟 Features Highlight
+
+### Intelligent Completion Caching
+Zsh completion regenerates only once per day for faster startup.
+
+### Modular Configuration
+Organized zsh config in `~/.config/zsh/`:
+- `functions.zsh` - Custom functions
+- `aliases.zsh` - Command aliases
+- `modern-aliases.zsh` - Modern tool aliases (eza, bat, ripgrep)
+- `zinit-setup.zsh` - Plugin manager
+- `completion-optimizer.zsh` - Performance optimization
+
+### Powerlevel10k Theme
+Instant prompt for minimal latency.
+
+### Cross-Platform Support
+Templates handle both Intel and Apple Silicon Macs automatically.
+
+---
+
+## 📚 Resources
+
+- [Chezmoi Documentation](https://www.chezmoi.io/)
+- [Chezmoi Template Reference](https://www.chezmoi.io/reference/templates/)
+- [Age Encryption](https://github.com/FiloSottile/age)
+- [Task Runner](https://taskfile.dev/)
+- [Oh My Zsh](https://ohmyz.sh/)
+- [Powerlevel10k](https://github.com/romkatv/powerlevel10k)
+
+---
+
+## 📄 License
+
+This configuration is for personal use. Feel free to fork and adapt to your needs.
+
+---
+
+**Questions or issues?** Open an issue on [GitHub](https://github.com/solaegis/chezmoi/issues)

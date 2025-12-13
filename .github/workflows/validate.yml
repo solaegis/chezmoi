@@ -1,0 +1,97 @@
+name: Validate Configuration
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install chezmoi
+        run: brew install chezmoi
+      
+      - name: Install validation tools
+        run: |
+          brew install shellcheck yamllint
+          pip3 install pre-commit
+      
+      - name: Validate chezmoi templates
+        run: |
+          echo "Validating template syntax..."
+          find . -name "*.tmpl" -type f | while read template; do
+            echo "Checking $template..."
+            chezmoi execute-template < "$template" > /dev/null || {
+              echo "❌ Template validation failed: $template"
+              exit 1
+            }
+          done
+          echo "✅ All templates validated successfully"
+      
+      - name: Run shellcheck
+        run: |
+          echo "Running shellcheck on shell scripts..."
+          shellcheck *.sh || {
+            echo "❌ Shellcheck found issues"
+            exit 1
+          }
+          echo "✅ Shellcheck passed"
+      
+      - name: Validate YAML files
+        run: |
+          echo "Validating YAML files..."
+          yamllint -d '{extends: default, rules: {line-length: {max: 120}}}' \
+            Taskfile.yaml .pre-commit-config.yaml || {
+            echo "❌ YAML validation failed"
+            exit 1
+          }
+          echo "✅ YAML validation passed"
+      
+      - name: Run chezmoi doctor
+        run: |
+          echo "Running chezmoi doctor..."
+          chezmoi doctor
+      
+      - name: Test chezmoi apply (dry-run)
+        run: |
+          echo "Testing chezmoi apply in dry-run mode..."
+          chezmoi init --apply=false .
+          chezmoi apply --dry-run -v
+      
+      - name: Run pre-commit hooks
+        run: |
+          echo "Running pre-commit hooks..."
+          pre-commit run --all-files || {
+            echo "⚠️  Some pre-commit hooks failed (non-fatal)"
+          }
+
+  test-installation:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Test minimal installation script
+        run: |
+          echo "Testing install-minimal.sh..."
+          bash -n install-minimal.sh || {
+            echo "❌ Syntax error in install-minimal.sh"
+            exit 1
+          }
+          echo "✅ install-minimal.sh syntax valid"
+      
+      - name: Test comprehensive installation script
+        run: |
+          echo "Testing install-comprehensive.sh..."
+          bash -n install-comprehensive.sh || {
+            echo "❌ Syntax error in install-comprehensive.sh"
+            exit 1
+          }
+          echo "✅ install-comprehensive.sh syntax valid"

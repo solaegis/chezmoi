@@ -256,11 +256,7 @@ ff() {
     echo "Usage: ff <pattern>"
     return 1
   fi
-  if command -v fd &>/dev/null; then
-    fd "$1"
-  else
-    find . -name "*$1*" -type f
-  fi
+  find . -name "*$1*" -type f
 }
 
 # Directory size analysis

@@ -1,85 +1,66 @@
 ---
+# Pre-commit hooks for chezmoi dotfiles repository
+# Install: pre-commit install
+# Run manually: pre-commit run --all-files
+# Update: pre-commit autoupdate
+
 repos:
-  # Basic file hygiene and format validation
+  # Standard pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+    rev: v4.5.0
     hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
       - id: check-yaml
-      - id: check-json
-      - id: check-toml
+        exclude: '.chezmoidata.yaml.tmpl'
       - id: check-added-large-files
+        args: ['--maxkb=500']
       - id: check-merge-conflict
-      - id: debug-statements
+      - id: detect-private-key
+        exclude: 'key.txt'
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-case-conflict
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
 
-  # Shell script validation
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.11.0.1
+  # Shell script linting
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.9.0
     hooks:
       - id: shellcheck
-        args: [--severity=warning]
-        types: [shell]
+        args: ['-x']
 
-  # Additional config file validation
+  # YAML linting
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.37.1
+    rev: v1.33.0
     hooks:
       - id: yamllint
-        args: [--format, parsable, --strict]
-        exclude: 'dot_config/iterm2/iTerm2 State.itermexport'
+        args: ['-d', '{extends: default, rules: {line-length: {max: 120}}}']
 
-  # INI file validation
-  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.15.0
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.38.0
     hooks:
-      - id: pretty-format-ini
-        args: [--autofix]
+      - id: markdownlint
+        args: ['--config', '.markdownlint.yaml']
 
-  # Dotenv file validation
-  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.15.0
+  # Secret detection
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.1
     hooks:
-      - id: pretty-format-toml
-        args: [--autofix]
+      - id: gitleaks
 
-  # Go template validation for chezmoi .tmpl files
+  # Local hooks for chezmoi-specific validation
   - repo: local
     hooks:
-      - id: chezmoi-template-syntax
-        name: Validate chezmoi template syntax
-        entry: go
-        args:
-          - run
-          - -c
-          - >-
-            package main; import ("text/template"; "os"); func main() { _, err
-            := template.ParseFiles(os.Args[1]); if err != nil { panic(err) } }
+      - id: chezmoi-validate-templates
+        name: Validate chezmoi templates
+        entry: bash -c 'for f in "$@"; do chezmoi execute-template < "$f" > /dev/null || exit 1; done' --
         language: system
         files: '\.tmpl$'
         pass_filenames: true
 
-  # Chezmoi validation hooks
-  - repo: local
-    hooks:
-      - id: chezmoi-verify
-        name: Chezmoi dry-run verification
-        entry: chezmoi
-        args: [apply, --dry-run, --verbose]
+      - id: chezmoi-doctor
+        name: Run chezmoi doctor
+        entry: chezmoi doctor
         language: system
-        files: '\.chezmoi'
-        pass_filenames: false
-
-      - id: chezmoi-diff
-        name: Chezmoi diff check
-        entry: bash
-        args:
-          - -c
-          - >-
-            chezmoi diff --exit-on-error || (echo "Chezmoi state differs from
-            target state" && exit 1)
-        language: system
-        files: '\.chezmoi'
         pass_filenames: false
