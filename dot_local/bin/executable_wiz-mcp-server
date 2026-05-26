@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# Start Wiz MCP Server container for Cursor (HTTP on localhost:8000).
+set -euo pipefail
+
+ENV_FILE="${WIZ_MCP_ENV_FILE:-$HOME/.config/wiz/mcp.env}"
+IMAGE="${WIZ_MCP_IMAGE:-709825985650.dkr.ecr.us-east-1.amazonaws.com/wiz/wiz-mcp:v0.1.1-stateless}"
+CONTAINER_NAME="${WIZ_MCP_CONTAINER_NAME:-wiz-mcp}"
+PORT="${WIZ_MCP_PORT:-8000}"
+AWS_REGION="${AWS_REGION:-us-east-1}"
+ECR_REGISTRY="709825985650.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "Missing $ENV_FILE — create Wiz MCP integration creds, then chezmoi apply." >&2
+  exit 1
+fi
+
+# shellcheck disable=SC1090
+set -a
+source "$ENV_FILE"
+set +a
+
+if [[ -z "${WIZ_CLIENT_ID:-}" || -z "${WIZ_CLIENT_SECRET:-}" ]]; then
+  echo "WIZ_CLIENT_ID and WIZ_CLIENT_SECRET must be set in $ENV_FILE" >&2
+  exit 1
+fi
+
+port_map="${WIZ_MCP_PORT:-8000}"
+host_port="${port_map##*:}"
+host_port="${host_port:-8000}"
+
+login_ecr() {
+  if ! command -v aws >/dev/null 2>&1; then
+    echo "aws CLI not found; cannot log in to ECR for $IMAGE" >&2
+    return 1
+  fi
+  local password
+  if ! password="$(aws ecr get-login-password --region "$AWS_REGION" 2>/dev/null)"; then
+    echo "ECR login failed (check AWS credentials / Marketplace subscription for Wiz MCP)." >&2
+    return 1
+  fi
+  if [[ -z "$password" ]]; then
+    echo "ECR login returned empty password." >&2
+    return 1
+  fi
+  echo "$password" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+}
+
+if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+  login_ecr || true
+  if ! docker pull "$IMAGE"; then
+    echo "Pull failed. Subscribe to Wiz MCP Server on AWS Marketplace, then:" >&2
+    echo "  AWS_PROFILE=default wiz-mcp-server" >&2
+    echo "https://aws.amazon.com/marketplace/pp/prodview-nlyysa5n2s7h6" >&2
+    exit 1
+  fi
+fi
+
+if docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER_NAME"; then
+  docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+fi
+
+exec docker run --rm -d \
+  --name "$CONTAINER_NAME" \
+  --env-file "$ENV_FILE" \
+  -p "${host_port}:${host_port}" \
+  "$IMAGE"

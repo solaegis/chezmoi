@@ -187,6 +187,13 @@ if [[ -f "${HOMEBREW_PREFIX}/share/google-cloud-sdk/completion.zsh.inc" ]]; then
   source "${HOMEBREW_PREFIX}/share/google-cloud-sdk/completion.zsh.inc"
 fi
 
+# Wiz MCP credentials for tools that read ${env:WIZ_CLIENT_ID} (optional)
+if [[ -f "$HOME/.config/wiz/mcp.env" ]]; then
+  set -a
+  source "$HOME/.config/wiz/mcp.env"
+  set +a
+fi
+
 # Load Local Customizations (Always Last)
 # ============================================================================
 # This file is for machine-specific or personal customizations
