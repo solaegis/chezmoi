@@ -1,0 +1,43 @@
+#!/opt/homebrew/bin/bash
+
+# Configures macOS autofs to NFS-mount NAS shares at /nas/media and /nas/users.
+# Requires sudo for /etc/ changes — will prompt once.
+# Managed by chezmoi.
+
+{{- if eq .chezmoi.os "darwin" }}
+
+set -euo pipefail
+
+log()  { echo "[nas-autofs] $*"; }
+warn() { echo "[nas-autofs] WARNING: $*" >&2; }
+
+AUTO_NAS_SRC="${HOME}/.config/nas/auto_nas"
+AUTO_NAS_DST="/etc/auto_nas"
+AUTO_MASTER="/etc/auto_master"
+AUTO_MASTER_ENTRY="/nas  auto_nas  -nobrowse,nosuid,noowners"
+
+# --- /etc/auto_nas ---
+if [ -f "$AUTO_NAS_DST" ] && diff -q "$AUTO_NAS_SRC" "$AUTO_NAS_DST" &>/dev/null; then
+    log "/etc/auto_nas already up to date"
+else
+    log "Installing /etc/auto_nas..."
+    sudo cp "$AUTO_NAS_SRC" "$AUTO_NAS_DST"
+fi
+
+# --- /etc/auto_master ---
+if grep -qF "$AUTO_MASTER_ENTRY" "$AUTO_MASTER"; then
+    log "/etc/auto_master already has /nas entry"
+else
+    log "Adding /nas entry to /etc/auto_master..."
+    echo "$AUTO_MASTER_ENTRY" | sudo tee -a "$AUTO_MASTER" > /dev/null
+fi
+
+# --- Reload automounter ---
+log "Reloading automounter..."
+sudo automount -vc
+
+log "NFS autofs configured. /nas/media and /nas/users will mount on first access."
+
+{{- else }}
+echo "nas-autofs: skipping (not macOS)"
+{{- end }}

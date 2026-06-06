@@ -1,0 +1,2 @@
+media  -fstype=nfs,rw,resvport,soft,intr,nolockd,noowners  nas.home.solaegis.com:/data/media
+users  -fstype=nfs,rw,resvport,soft,intr,nolockd,noowners  nas.home.solaegis.com:/data/users/lvavasour
