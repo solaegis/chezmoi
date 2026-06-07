@@ -41,10 +41,10 @@ make_symlink() {
 ls "$MEDIA_MOUNT" &>/dev/null || { warn "$MEDIA_MOUNT not available — is the NAS reachable?"; exit 1; }
 ls "$USERS_MOUNT" &>/dev/null || { warn "$USERS_MOUNT not available — is the NAS reachable?"; exit 1; }
 
-make_symlink "${MEDIA_MOUNT}/libation"  "${HOME}/Libation"
-make_symlink "${MEDIA_MOUNT}/calibre"   "${HOME}/Calibre Library"
+make_symlink "${MEDIA_MOUNT}/libation"         "${HOME}/Libation"
+make_symlink "${MEDIA_MOUNT}/calibre"          "${HOME}/Calibre Library"
+make_symlink "${USERS_MOUNT}/imazing"          "${HOME}/Library/Application Support/iMazing"
 
-log "iMazing backup path: ${USERS_MOUNT}/imazing (configure manually in iMazing → Preferences → Storage)"
 log "Done."
 
 {{- else }}
